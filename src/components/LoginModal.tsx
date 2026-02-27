@@ -57,8 +57,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
           <div className="mx-auto w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
             <Lock className="w-6 h-6 text-indigo-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Sign in to Roster</h2>
-          <p className="text-gray-500 mt-2">Enter your credentials to access the system</p>
+          <h2 className="text-2xl font-bold text-gray-900">เข้าสู่ระบบตารางเวร</h2>
+          <p className="text-gray-500 mt-2">กรุณากรอกข้อมูลเข้าสู่ระบบ</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -69,7 +69,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ใช้งาน</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <User className="h-5 w-5 text-gray-400" />
@@ -79,14 +79,14 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="admin or kik"
+                placeholder="admin หรือ kik"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">รหัสผ่าน</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400" />
@@ -107,7 +107,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
             disabled={loading}
             className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
       </div>

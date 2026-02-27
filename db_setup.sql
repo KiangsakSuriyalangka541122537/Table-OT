@@ -63,7 +63,25 @@ CREATE TABLE logs (
     action_type TEXT NOT NULL
 );
 
--- 8. Row Level Security (RLS) Policies
+-- 8. Create Shift Swap Requests Table
+CREATE TYPE shift_swap_status AS ENUM ('pending', 'approved', 'rejected');
+
+CREATE TABLE shift_swap_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    requester_staff_id UUID REFERENCES staff(id) ON DELETE CASCADE NOT NULL,
+    requester_shift_id UUID REFERENCES shifts(id) ON DELETE CASCADE NOT NULL,
+    requester_date DATE NOT NULL,
+    requester_shift_type shift_type NOT NULL,
+    target_staff_id UUID REFERENCES staff(id) ON DELETE CASCADE NOT NULL,
+    target_shift_id UUID REFERENCES shifts(id) ON DELETE CASCADE NOT NULL,
+    target_date DATE NOT NULL,
+    target_shift_type shift_type NOT NULL,
+    status shift_swap_status NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 9. Row Level Security (RLS) Policies
 -- For simplicity in this demo, we can allow all access if authenticated via our custom logic, 
 -- or set up basic policies.
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -71,6 +89,7 @@ ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE roster_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shift_swap_requests ENABLE ROW LEVEL SECURITY;
 
 -- Create policies to allow all operations for now (since we handle auth in app logic)
 CREATE POLICY "Allow all on users" ON users FOR ALL USING (true);
@@ -78,3 +97,4 @@ CREATE POLICY "Allow all on staff" ON staff FOR ALL USING (true);
 CREATE POLICY "Allow all on shifts" ON shifts FOR ALL USING (true);
 CREATE POLICY "Allow all on roster_status" ON roster_status FOR ALL USING (true);
 CREATE POLICY "Allow all on logs" ON logs FOR ALL USING (true);
+CREATE POLICY "Allow all on shift_swap_requests" ON shift_swap_requests FOR ALL USING (true);

@@ -50,8 +50,8 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
             <BarChart2 className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Monthly Statistics</h2>
-            <p className="text-gray-500 text-sm">Shift distribution and OT calculations</p>
+            <h2 className="text-2xl font-bold text-gray-900">สถิติรายเดือน</h2>
+            <p className="text-gray-500 text-sm">การกระจายกะและการคำนวณค่าล่วงเวลา</p>
           </div>
         </div>
 
@@ -78,12 +78,12 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Morning (M)</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Afternoon (A)</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Night (N)</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Shifts</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Est. OT Pay (฿)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">พนักงาน</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">เช้า (M)</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">บ่าย (A)</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ดึก (N)</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">รวมกะ</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ค่าล่วงเวลาโดยประมาณ (฿)</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

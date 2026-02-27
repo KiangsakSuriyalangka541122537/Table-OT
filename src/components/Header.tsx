@@ -1,5 +1,6 @@
 import React from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
+import { th } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Download, LogIn, LogOut, Settings, BarChart2 } from 'lucide-react';
 import { User } from '../types';
 
@@ -37,8 +38,8 @@ export function Header({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">Hospital Duty Roster</h1>
-            <h1 className="text-xl font-semibold text-gray-900 sm:hidden">Roster</h1>
+            <h1 className="text-xl font-bold text-gray-900 hidden sm:block">ระบบจัดการตารางเวรโรงพยาบาล</h1>
+            <h1 className="text-xl font-bold text-gray-900 sm:hidden">ตารางเวร</h1>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -50,7 +51,7 @@ export function Header({
                 <ChevronLeft className="w-5 h-5 text-gray-600" />
               </button>
               <span className="px-3 font-medium text-gray-700 min-w-[120px] text-center">
-                {format(currentMonth, 'MMMM yyyy')}
+                {format(currentMonth, 'MMMM yyyy', { locale: th })}
               </span>
               <button
                 onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
@@ -61,13 +62,13 @@ export function Header({
             </div>
 
             <div className="hidden md:flex items-center space-x-2">
-              <button onClick={onStatsClick} className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors" title="Statistics">
+              <button onClick={onStatsClick} className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors" title="สถิติ">
                 <BarChart2 className="w-5 h-5" />
               </button>
-              <button onClick={onExportPDF} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" title="Export PDF">
+              <button onClick={onExportPDF} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" title="ส่งออก PDF">
                 <Download className="w-5 h-5" />
               </button>
-              <button onClick={onExportExcel} className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors" title="Export Excel">
+              <button onClick={onExportExcel} className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors" title="ส่งออก Excel">
                 <Download className="w-5 h-5" />
               </button>
             </div>
@@ -82,9 +83,9 @@ export function Header({
                       : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
                   }`}
                 >
-                  {isPublished ? 'Published' : 'Draft Mode'}
+                  {isPublished ? 'เผยแพร่แล้ว' : 'โหมดร่าง'}
                 </button>
-                <button onClick={onAdminClick} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors" title="Admin Settings">
+                <button onClick={onAdminClick} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors" title="ตั้งค่าผู้ดูแล">
                   <Settings className="w-5 h-5" />
                 </button>
               </div>
@@ -94,14 +95,14 @@ export function Header({
               {user ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm font-medium text-gray-700 hidden sm:block">{user.name}</span>
-                  <button onClick={onLogout} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" title="Logout">
+                  <button onClick={onLogout} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" title="ออกจากระบบ">
                     <LogOut className="w-5 h-5" />
                   </button>
                 </div>
               ) : (
                 <button onClick={onLoginClick} className="flex items-center space-x-2 text-indigo-600 hover:text-indigo-700 font-medium">
                   <LogIn className="w-5 h-5" />
-                  <span className="hidden sm:block">Login</span>
+                  <span className="hidden sm:block">เข้าสู่ระบบ</span>
                 </button>
               )}
             </div>

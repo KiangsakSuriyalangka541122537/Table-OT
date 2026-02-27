@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, Trash2, Plus, Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { User, Staff } from '../types';
+import { ShiftSwapRequestsManager } from './ShiftSwapRequestsManager';
 
 interface AdminManagerProps {
   isOpen: boolean;
@@ -79,8 +80,8 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
             <Users className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Manage Staff</h2>
-            <p className="text-gray-500 text-sm">Add or remove hospital staff</p>
+            <h2 className="text-2xl font-bold text-gray-900">จัดการพนักงาน</h2>
+            <p className="text-gray-500 text-sm">เพิ่มหรือลบพนักงานโรงพยาบาล</p>
           </div>
         </div>
 
@@ -90,14 +91,15 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
           </div>
         )}
 
+        {/* Staff Management Section */}
         <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-            <Plus className="w-4 h-4 mr-2" /> Add New Staff
+            <Plus className="w-4 h-4 mr-2" /> เพิ่มพนักงานใหม่
           </h3>
           <form onSubmit={handleAddStaff} className="flex gap-3">
             <input
               type="text"
-              placeholder="Full Name"
+              placeholder="ชื่อ-นามสกุล"
               value={newStaffName}
               onChange={(e) => setNewStaffName(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -105,7 +107,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
             />
             <input
               type="text"
-              placeholder="Phone (optional)"
+              placeholder="เบอร์โทรศัพท์ (ไม่บังคับ)"
               value={newStaffPhone}
               onChange={(e) => setNewStaffPhone(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -124,9 +126,9 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อ</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">การดำเนินการ</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -146,7 +148,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
                       onClick={() => handleDeleteStaff(staff.id)}
                       disabled={loading}
                       className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full transition-colors"
-                      title="Delete Staff"
+                      title="ลบพนักงาน"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -156,12 +158,21 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
               {staffList.length === 0 && (
                 <tr>
                   <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
-                    No staff members found. Add one above.
+                    ไม่พบพนักงาน เพิ่มพนักงานใหม่ด้านบน
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Shift Swap Requests Management Section */}
+        <div className="mt-8">
+          <ShiftSwapRequestsManager
+            allStaff={staffList}
+            allShifts={[]}
+            onUpdate={onStaffUpdate}
+          />
         </div>
       </div>
     </div>

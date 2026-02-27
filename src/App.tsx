@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { format, addDays, getDaysInMonth } from 'date-fns';
+import { th } from 'date-fns/locale';
 import { supabase } from './lib/supabase';
-import { User, Staff, Shift, ShiftType, RosterStatus } from './types';
+import { User, Staff, Shift, ShiftType, RosterStatus, ShiftSwapRequest } from './types';
 import { Header } from './components/Header';
 import { Grid } from './components/Grid';
 import { LoginModal } from './components/LoginModal';
 import { ShiftEditModal } from './components/ShiftEditModal';
 import { StatsModal } from './components/StatsModal';
 import { AdminManager } from './components/AdminManager';
+import { ShiftSwapRequestModal } from './components/ShiftSwapRequestModal';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
@@ -24,6 +26,11 @@ export default function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  
+  // Shift Swap Request Modal state
+  const [isShiftSwapRequestModalOpen, setIsShiftSwapRequestModalOpen] = useState(false);
+  const [shiftToSwap, setShiftToSwap] = useState<Shift | null>(null);
+  const [requesterStaff, setRequesterStaff] = useState<Staff | null>(null);
   
   // Shift Edit Modal state
   const [isShiftEditOpen, setIsShiftEditOpen] = useState(false);
@@ -82,6 +89,31 @@ export default function App() {
     if (!isAdmin) return;
     setEditingCell({ staffId, dateStr, currentShift });
     setIsShiftEditOpen(true);
+  };
+
+  const handleRequestShiftSwap = (staff: Staff, shift: Shift) => {
+    if (isAdmin) return; // Admins use edit modal
+    setRequesterStaff(staff);
+    setShiftToSwap(shift);
+    setIsShiftSwapRequestModalOpen(true);
+  };
+
+  const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { error } = await supabase.from('shift_swap_requests').insert(request);
+      if (error) throw error;
+
+      await supabase.from('logs').insert({
+        message: `Staff ${request.requester_staff_id} requested to swap shift ${request.requester_shift_id} with ${request.target_staff_id}'s shift ${request.target_shift_id}`,
+        action_type: 'SHIFT_SWAP_REQUEST_SENT'
+      });
+
+      alert('ส่งคำขอสลับเวรเรียบร้อยแล้ว');
+      fetchData(); // Refresh data to reflect any changes or new requests
+    } catch (error) {
+      console.error('Error sending swap request:', error);
+      alert('เกิดข้อผิดพลาดในการส่งคำขอสลับเวร');
+    }
   };
 
   const handleSaveShift = async (newShiftType: ShiftType | null) => {
@@ -184,15 +216,15 @@ export default function App() {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       pdf.setFontSize(16);
-      pdf.text(`Hospital Duty Roster - ${format(currentMonth, 'MMMM yyyy')}`, 14, 15);
+      pdf.text(`ตารางเวรโรงพยาบาล - ${format(currentMonth, 'MMMM yyyy', { locale: th })}`, 14, 15);
       
       pdf.addImage(imgData, 'PNG', 10, 25, pdfWidth - 20, pdfHeight);
       
       // Add signature lines
       const pageHeight = pdf.internal.pageSize.getHeight();
       pdf.setFontSize(12);
-      pdf.text('Prepared By: ___________________', 20, pageHeight - 20);
-      pdf.text('Approved By: ___________________', pdfWidth - 100, pageHeight - 20);
+      pdf.text('จัดทำโดย: ___________________', 20, pageHeight - 20);
+      pdf.text('อนุมัติโดย: ___________________', pdfWidth - 100, pageHeight - 20);
       
       pdf.save(`Roster_${monthKey}.pdf`);
     } catch (error) {
@@ -241,21 +273,21 @@ export default function App() {
             <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
               <span className="text-2xl">🚧</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Roster in Draft Mode</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">ตารางเวรอยู่ในโหมดร่าง</h2>
             <p className="text-gray-500 max-w-md mx-auto">
-              The duty roster for {format(currentMonth, 'MMMM yyyy')} is currently being prepared by the administrator. Please check back later once it is published.
+              ตารางเวรสำหรับเดือน {format(currentMonth, 'MMMM yyyy', { locale: th })} กำลังถูกจัดเตรียมโดยผู้ดูแลระบบ กรุณาตรวจสอบอีกครั้งเมื่อมีการเผยแพร่แล้ว
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">
-                Shift Schedule
+                ตารางกะการทำงาน
               </h2>
               <div className="flex items-center space-x-4 text-sm">
-                <div className="flex items-center"><div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded mr-2"></div>Morning (M)</div>
-                <div className="flex items-center"><div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded mr-2"></div>Afternoon (A)</div>
-                <div className="flex items-center"><div className="w-3 h-3 bg-purple-100 border border-purple-300 rounded mr-2"></div>Night (N)</div>
+                <div className="flex items-center"><div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded mr-2"></div>เช้า (M)</div>
+                <div className="flex items-center"><div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded mr-2"></div>บ่าย (A)</div>
+                <div className="flex items-center"><div className="w-3 h-3 bg-purple-100 border border-purple-300 rounded mr-2"></div>ดึก (N)</div>
               </div>
             </div>
 
@@ -269,7 +301,9 @@ export default function App() {
                 staffList={staffList}
                 shifts={shifts}
                 isAdmin={isAdmin}
+                user={user}
                 onCellClick={handleCellClick}
+                onShiftSwapRequest={handleRequestShiftSwap}
               />
             )}
           </div>
@@ -304,6 +338,17 @@ export default function App() {
         onClose={() => setIsAdminOpen(false)}
         staffList={staffList}
         onStaffUpdate={fetchData}
+      />
+
+      {/* Shift Swap Request Modal */}
+      <ShiftSwapRequestModal
+        isOpen={isShiftSwapRequestModalOpen}
+        onClose={() => setIsShiftSwapRequestModalOpen(false)}
+        onSendRequest={handleSendSwapRequest}
+        currentStaff={requesterStaff}
+        currentShift={shiftToSwap}
+        allStaff={staffList}
+        allShifts={shifts}
       />
     </div>
   );

@@ -13,10 +13,10 @@ interface ShiftEditModalProps {
 }
 
 const shiftOptions: { type: ShiftType | null; label: string; icon: React.ElementType; color: string; desc: string }[] = [
-  { type: 'M', label: 'Morning (ช)', icon: Sun, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300', desc: '08:00 - 16:00' },
-  { type: 'A', label: 'Afternoon (บ)', icon: Sunset, color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-300', desc: '16:00 - 24:00' },
-  { type: 'N', label: 'Night (ด)', icon: Moon, color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-300', desc: '24:00 - 08:00' },
-  { type: null, label: 'Off (หยุด)', icon: Ban, color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300', desc: 'No shift assigned' },
+  { type: 'M', label: 'เช้า (ช)', icon: Sun, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300', desc: '08:00 - 16:00' },
+  { type: 'A', label: 'บ่าย (บ)', icon: Sunset, color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-300', desc: '16:00 - 24:00' },
+  { type: 'N', label: 'ดึก (ด)', icon: Moon, color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-300', desc: '24:00 - 08:00' },
+  { type: null, label: 'หยุด (O)', icon: Ban, color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300', desc: 'ไม่มีกะการทำงาน' },
 ];
 
 export function ShiftEditModal({ isOpen, onClose, onSave, currentShift, staffName, dateStr }: ShiftEditModalProps) {
@@ -33,9 +33,9 @@ export function ShiftEditModal({ isOpen, onClose, onSave, currentShift, staffNam
         </button>
 
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Edit Shift</h2>
+          <h2 className="text-xl font-bold text-gray-900">แก้ไขกะการทำงาน</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Assigning shift for <span className="font-semibold text-gray-700">{staffName}</span> on <span className="font-semibold text-gray-700">{dateStr}</span>
+            กำลังกำหนดกะสำหรับ <span className="font-semibold text-gray-700">{staffName}</span> ในวันที่ <span className="font-semibold text-gray-700">{dateStr}</span>
           </p>
         </div>
 

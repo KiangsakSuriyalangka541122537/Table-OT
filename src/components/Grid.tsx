@@ -1,6 +1,7 @@
 import React from 'react';
 import { format, getDaysInMonth, isWeekend, isToday } from 'date-fns';
-import { Staff, Shift, ShiftType } from '../types';
+import { th } from 'date-fns/locale';
+import { Staff, Shift, ShiftType, User } from '../types';
 import clsx from 'clsx';
 
 interface GridProps {
@@ -8,7 +9,9 @@ interface GridProps {
   staffList: Staff[];
   shifts: Shift[];
   isAdmin: boolean;
+  user: User | null;
   onCellClick: (staffId: string, date: string, currentShift: ShiftType | undefined) => void;
+  onShiftSwapRequest: (staff: Staff, shift: Shift) => void;
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -25,7 +28,7 @@ const shiftLabels: Record<ShiftType, string> = {
   O: 'หยุด',
 };
 
-export function Grid({ currentMonth, staffList, shifts, isAdmin, onCellClick }: GridProps) {
+export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellClick, onShiftSwapRequest }: GridProps) {
   const daysInMonth = getDaysInMonth(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1);
@@ -43,7 +46,7 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, onCellClick }: 
         <thead className="bg-gray-50 sticky top-0 z-10">
           <tr>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 border-r border-gray-200 w-48">
-              Staff Name
+              ชื่อพนักงาน
             </th>
             {days.map((day) => {
               const isWknd = isWeekend(day);
@@ -59,7 +62,7 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, onCellClick }: 
                   )}
                 >
                   <div className="flex flex-col items-center">
-                    <span>{format(day, 'E')}</span>
+                    <span>{format(day, 'E', { locale: th })}</span>
                     <span className="text-lg font-semibold">{format(day, 'd')}</span>
                   </div>
                 </th>
@@ -87,7 +90,15 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, onCellClick }: 
                 return (
                   <td
                     key={dateStr}
-                    onClick={() => isAdmin && onCellClick(staff.id, dateStr, shiftType)}
+                    onClick={() => {
+                      const staff = staffList.find(s => s.id === staff.id);
+                      const shift = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
+                      if (isAdmin) {
+                        onCellClick(staff.id, dateStr, shiftType);
+                      } else if (user && staff && shift && user.id === staff.id) {
+                        onShiftSwapRequest(staff, shift);
+                      }
+                    }}
                     className={clsx(
                       "px-1 py-2 whitespace-nowrap text-center text-sm border-r border-gray-200 cursor-pointer transition-all",
                       isAdmin && "hover:bg-gray-100",
@@ -115,7 +126,7 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, onCellClick }: 
           {staffList.length === 0 && (
             <tr>
               <td colSpan={daysInMonth + 1} className="px-6 py-8 text-center text-gray-500">
-                No staff members found.
+                ไม่พบพนักงาน
               </td>
             </tr>
           )}
