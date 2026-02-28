@@ -64,60 +64,68 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
     return (
       <div 
         ref={ref} 
-        className="bg-white text-black p-8 w-[297mm] min-h-[210mm] box-border" 
-        style={{ fontFamily: 'Sarabun, Kanit, sans-serif' }}
+        className="p-8 w-[297mm] min-h-[210mm] box-border" 
+        style={{ fontFamily: 'Sarabun, Kanit, sans-serif', backgroundColor: '#ffffff', color: '#000000' }}
       >
+        <style>{`
+          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 14px; margin-bottom: 16px; }
+          .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 4px; font-weight: normal; }
+          .pdf-table th { padding: 4px; }
+          .pdf-bg-gray { background-color: #e5e7eb !important; }
+          .pdf-text-red { color: #dc2626 !important; font-weight: bold; }
+        `}</style>
+
         {/* Header */}
         <div className="text-center mb-6 space-y-2">
           <h1 className="text-xl font-bold">หลักฐานการขออนุมัติปฏิบัติงานนอกเวลาราชการ</h1>
           <p className="text-lg">เวรเช้า 08.00 – 16.00 น. เวรบ่าย 16.00 – 24.00 น. เวรดึก 24.00 – 08.00 น.</p>
           <p className="text-lg">
-            ส่วนราชการ โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช ประจำเดือน <span className="text-red-600 font-bold">{monthName}</span> พ.ศ. {year} งานศูนย์คอมพิวเตอร์
+            ส่วนราชการ โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช ประจำเดือน <span className="pdf-text-red">{monthName}</span> พ.ศ. {year} งานศูนย์คอมพิวเตอร์
           </p>
         </div>
 
         {/* Table */}
-        <table className="w-full border-collapse border border-black text-sm text-center mb-4">
+        <table className="pdf-table">
           <thead>
             <tr>
-              <th className="border border-black p-1 w-10 font-normal" rowSpan={2}>ลำดับ<br/>ที่</th>
-              <th className="border border-black p-1 w-48 font-normal" rowSpan={2}>ชื่อ -สกุล</th>
-              <th className="border border-black p-1 w-40 font-normal" rowSpan={2}>ตำแหน่ง</th>
-              <th className="border border-black p-1 w-16 font-normal" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
-              <th className="border border-black p-1 font-normal" colSpan={31}>วันที่ขึ้นปฏิบัติงาน</th>
-              <th className="border border-black p-1 w-16 font-normal" rowSpan={2}>จำนวน<br/>เวร</th>
-              <th className="border border-black p-1 w-20 font-normal" rowSpan={2}>จำนวนเงิน</th>
+              <th className="w-10" rowSpan={2}>ลำดับ<br/>ที่</th>
+              <th className="w-48" rowSpan={2}>ชื่อ -สกุล</th>
+              <th className="w-40" rowSpan={2}>ตำแหน่ง</th>
+              <th className="w-16" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
+              <th colSpan={31}>วันที่ขึ้นปฏิบัติงาน</th>
+              <th className="w-16" rowSpan={2}>จำนวน<br/>เวร</th>
+              <th className="w-20" rowSpan={2}>จำนวนเงิน</th>
             </tr>
             <tr>
               {days.map((day) => (
-                <th key={day} className="border border-black p-0.5 w-6 font-normal">{day}</th>
+                <th key={day} className="w-6 p-0.5">{day}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((row, i) => (
               <tr key={i}>
-                <td className="border border-black p-1">{row.no}</td>
-                <td className="border border-black p-1 text-left px-2 whitespace-nowrap">{row.name}</td>
-                <td className="border border-black p-1 text-left px-2 whitespace-nowrap">{row.position}</td>
-                <td className="border border-black p-1">{row.rate}</td>
+                <td>{row.no}</td>
+                <td className="text-left px-2 whitespace-nowrap">{row.name}</td>
+                <td className="text-left px-2 whitespace-nowrap">{row.position}</td>
+                <td>{row.rate}</td>
                 {days.map((day, idx) => {
                   const isWeekendDay = day <= daysInMonth && isWeekend(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
                   return (
-                    <td key={idx} className={`border border-black p-0.5 ${isWeekendDay ? 'bg-gray-200' : ''}`}>
+                    <td key={idx} className={`p-0.5 ${isWeekendDay ? 'pdf-bg-gray' : ''}`}>
                       {row.shifts[idx]}
                     </td>
                   );
                 })}
-                <td className="border border-black p-1">{row.totalShifts}</td>
-                <td className="border border-black p-1">{row.totalPay.toLocaleString()}</td>
+                <td>{row.totalShifts}</td>
+                <td>{row.totalPay.toLocaleString()}</td>
               </tr>
             ))}
             {/* Total Row */}
             <tr>
-              <td className="border border-black p-1 border-r-0" colSpan={35}></td>
-              <td className="border border-black p-1 font-bold">{grandTotalShifts}</td>
-              <td className="border border-black p-1 font-bold">{grandTotalPay.toLocaleString()}</td>
+              <td style={{ borderRight: 'none' }} colSpan={35}></td>
+              <td style={{ fontWeight: 'bold' }}>{grandTotalShifts}</td>
+              <td style={{ fontWeight: 'bold' }}>{grandTotalPay.toLocaleString()}</td>
             </tr>
           </tbody>
         </table>
