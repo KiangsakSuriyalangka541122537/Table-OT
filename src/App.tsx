@@ -252,7 +252,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <Header
         currentMonth={currentMonth}
         setCurrentMonth={setCurrentMonth}
@@ -269,31 +269,46 @@ export default function App() {
 
       <main className="flex-1 max-w-full mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {!isAdmin && !rosterStatus?.is_published ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-            <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-              <span className="text-2xl">🚧</span>
+          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-16 text-center max-w-2xl mx-auto mt-12">
+            <div className="mx-auto w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 border border-amber-100 shadow-inner">
+              <span className="text-3xl">🚧</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">ตารางเวรอยู่ในโหมดร่าง</h2>
-            <p className="text-gray-500 max-w-md mx-auto">
-              ตารางเวรสำหรับเดือน {format(currentMonth, 'MMMM yyyy', { locale: th })} กำลังถูกจัดเตรียมโดยผู้ดูแลระบบ กรุณาตรวจสอบอีกครั้งเมื่อมีการเผยแพร่แล้ว
+            <h2 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight">ตารางเวรอยู่ในโหมดร่าง</h2>
+            <p className="text-slate-500 leading-relaxed">
+              ตารางเวรสำหรับเดือน {format(currentMonth, 'MMMM yyyy', { locale: th })} กำลังถูกจัดเตรียมโดยผู้ดูแลระบบ <br/>กรุณาตรวจสอบอีกครั้งเมื่อมีการเผยแพร่แล้ว
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">
-                ตารางกะการทำงาน
-              </h2>
-              <div className="flex items-center space-x-4 text-sm">
-                <div className="flex items-center"><div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded mr-2"></div>เช้า (M)</div>
-                <div className="flex items-center"><div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded mr-2"></div>บ่าย (A)</div>
-                <div className="flex items-center"><div className="w-3 h-3 bg-purple-100 border border-purple-300 rounded mr-2"></div>ดึก (N)</div>
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+                  ตารางกะการทำงาน
+                </h2>
+                <p className="text-slate-500 mt-1">จัดการและตรวจสอบตารางเวรพนักงานประจำเดือน</p>
+              </div>
+              <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-1.5 px-2">
+                  <div className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-sm shadow-blue-200"></div>
+                  <span className="text-xs font-semibold text-slate-600">เช้า (M)</span>
+                </div>
+                <div className="w-px h-3 bg-slate-200"></div>
+                <div className="flex items-center gap-1.5 px-2">
+                  <div className="w-2.5 h-2.5 bg-orange-500 rounded-full shadow-sm shadow-orange-200"></div>
+                  <span className="text-xs font-semibold text-slate-600">บ่าย (A)</span>
+                </div>
+                <div className="w-px h-3 bg-slate-200"></div>
+                <div className="flex items-center gap-1.5 px-2">
+                  <div className="w-2.5 h-2.5 bg-purple-500 rounded-full shadow-sm shadow-purple-200"></div>
+                  <span className="text-xs font-semibold text-slate-600">ดึก (N)</span>
+                </div>
               </div>
             </div>
 
             {loading ? (
-              <div className="flex justify-center items-center h-64 bg-white rounded-2xl shadow-sm border border-gray-200">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              <div className="flex flex-col justify-center items-center h-96 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                <p className="text-slate-400 text-sm font-medium animate-pulse">กำลังโหลดข้อมูล...</p>
               </div>
             ) : (
               <Grid
