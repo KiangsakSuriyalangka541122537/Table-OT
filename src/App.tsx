@@ -207,22 +207,34 @@ export default function App() {
   };
 
   const handleExportPDF = async () => {
-    if (!pdfRef.current) return;
+    if (!pdfRef.current) {
+      alert('ไม่พบข้อมูลสำหรับสร้าง PDF');
+      return;
+    }
 
     try {
-      const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
+      // Temporarily make it visible but off-screen for html2canvas to render properly
+      const element = pdfRef.current;
+      
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
       
       // A4 Landscape size is 297mm x 210mm
       const pdf = new jsPDF('l', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Roster_${monthKey}.pdf`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error exporting PDF:', error);
-      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF');
+      alert(`เกิดข้อผิดพลาดในการสร้างไฟล์ PDF: ${error?.message || 'Unknown error'}`);
     }
   };
 
@@ -361,7 +373,7 @@ export default function App() {
       />
 
       {/* Hidden PDF Template */}
-      <div className="absolute left-[-9999px] top-[-9999px]">
+      <div className="fixed top-[-9999px] left-0 -z-50 pointer-events-none" style={{ width: '297mm' }}>
         <ExportPDFTemplate 
           ref={pdfRef}
           currentMonth={currentMonth}
