@@ -10,6 +10,7 @@ import { ShiftEditModal } from './components/ShiftEditModal';
 import { StatsModal } from './components/StatsModal';
 import { AdminManager } from './components/AdminManager';
 import { ShiftSwapRequestModal } from './components/ShiftSwapRequestModal';
+import { ExportPDFTemplate } from './components/ExportPDFTemplate';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
@@ -38,6 +39,7 @@ export default function App() {
 
   const monthKey = format(currentMonth, 'yyyy-MM');
   const isAdmin = user?.role === 'admin';
+  const pdfRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchData();
@@ -205,30 +207,22 @@ export default function App() {
   };
 
   const handleExportPDF = async () => {
-    const input = document.getElementById('roster-table');
-    if (!input) return;
+    if (!pdfRef.current) return;
 
     try {
-      const canvas = await html2canvas(input, { scale: 2 });
+      const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL('image/png');
+      
+      // A4 Landscape size is 297mm x 210mm
       const pdf = new jsPDF('l', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
-      pdf.setFontSize(16);
-      pdf.text(`ตารางเวรโรงพยาบาล - ${format(currentMonth, 'MMMM yyyy', { locale: th })}`, 14, 15);
-      
-      pdf.addImage(imgData, 'PNG', 10, 25, pdfWidth - 20, pdfHeight);
-      
-      // Add signature lines
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      pdf.setFontSize(12);
-      pdf.text('จัดทำโดย: ___________________', 20, pageHeight - 20);
-      pdf.text('อนุมัติโดย: ___________________', pdfWidth - 100, pageHeight - 20);
-      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Roster_${monthKey}.pdf`);
     } catch (error) {
       console.error('Error exporting PDF:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF');
     }
   };
 
@@ -365,6 +359,16 @@ export default function App() {
         allStaff={staffList}
         allShifts={shifts}
       />
+
+      {/* Hidden PDF Template */}
+      <div className="absolute left-[-9999px] top-[-9999px]">
+        <ExportPDFTemplate 
+          ref={pdfRef}
+          currentMonth={currentMonth}
+          staffList={staffList}
+          shifts={shifts}
+        />
+      </div>
     </div>
   );
 }
