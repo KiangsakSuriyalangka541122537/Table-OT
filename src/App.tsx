@@ -52,7 +52,7 @@ export default function App() {
       const { data: staffData, error: staffError } = await supabase
         .from('staff')
         .select('*')
-        .order('name');
+        .order('created_at');
       if (staffError) throw staffError;
       setStaffList(staffData || []);
 
