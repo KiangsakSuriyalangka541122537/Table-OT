@@ -12,7 +12,7 @@ import { AdminManager } from './components/AdminManager';
 import { ShiftSwapRequestModal } from './components/ShiftSwapRequestModal';
 import { ExportPDFTemplate } from './components/ExportPDFTemplate';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
 
 export default function App() {
@@ -213,24 +213,28 @@ export default function App() {
     }
 
     try {
-      // Temporarily make it visible but off-screen for html2canvas to render properly
       const element = pdfRef.current;
       
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
+      // Use html-to-image instead of html2canvas to avoid Tailwind v4 oklch parsing errors
+      const dataUrl = await toPng(element, { 
+        quality: 1.0,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left'
+        }
       });
-      
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
       
       // A4 Landscape size is 297mm x 210mm
       const pdf = new jsPDF('l', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      // Calculate height based on aspect ratio of the generated image
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Roster_${monthKey}.pdf`);
     } catch (error: any) {
       console.error('Error exporting PDF:', error);
@@ -373,7 +377,7 @@ export default function App() {
       />
 
       {/* Hidden PDF Template */}
-      <div className="fixed top-[-9999px] left-0 -z-50 pointer-events-none" style={{ width: '297mm' }}>
+      <div className="absolute top-[-10000px] left-[-10000px] pointer-events-none">
         <ExportPDFTemplate 
           ref={pdfRef}
           currentMonth={currentMonth}
