@@ -64,13 +64,13 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
     return (
       <div 
         ref={ref} 
-        className="p-8 w-[297mm] min-h-[210mm] box-border" 
+        className="p-6 w-[297mm] min-h-[210mm] box-border" 
         style={{ fontFamily: 'Sarabun, Kanit, sans-serif', backgroundColor: '#ffffff', color: '#000000' }}
       >
         <style>{`
-          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 14px; margin-bottom: 16px; }
-          .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 4px; font-weight: normal; }
-          .pdf-table th { padding: 4px; }
+          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; margin-bottom: 16px; table-layout: fixed; }
+          .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 2px; font-weight: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .pdf-table th { padding: 2px; }
           .pdf-bg-gray { background-color: #e5e7eb !important; }
           .pdf-text-red { color: #dc2626 !important; font-weight: bold; }
         `}</style>
@@ -88,17 +88,17 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
         <table className="pdf-table">
           <thead>
             <tr>
-              <th className="w-10" rowSpan={2}>ลำดับ<br/>ที่</th>
-              <th className="w-48" rowSpan={2}>ชื่อ -สกุล</th>
-              <th className="w-40" rowSpan={2}>ตำแหน่ง</th>
-              <th className="w-16" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
+              <th className="w-8" rowSpan={2}>ลำดับ<br/>ที่</th>
+              <th className="w-40" rowSpan={2}>ชื่อ -สกุล</th>
+              <th className="w-32" rowSpan={2}>ตำแหน่ง</th>
+              <th className="w-12" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
               <th colSpan={31}>วันที่ขึ้นปฏิบัติงาน</th>
-              <th className="w-16" rowSpan={2}>จำนวน<br/>เวร</th>
-              <th className="w-20" rowSpan={2}>จำนวนเงิน</th>
+              <th className="w-12" rowSpan={2}>จำนวน<br/>เวร</th>
+              <th className="w-16" rowSpan={2}>จำนวนเงิน</th>
             </tr>
             <tr>
               {days.map((day) => (
-                <th key={day} className="w-6 p-0.5">{day}</th>
+                <th key={day} className="w-5 p-0.5 text-xs">{day}</th>
               ))}
             </tr>
           </thead>
