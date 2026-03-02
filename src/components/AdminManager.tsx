@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, Trash2, Plus, Edit2 } from 'lucide-react';
+import { X, Users, Trash2, Plus, Edit2, User as UserIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { User, Staff } from '../types';
 import { ShiftSwapRequestsManager } from './ShiftSwapRequestsManager';
@@ -136,8 +136,14 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
                 <tr key={staff.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">
-                        {staff.name.charAt(0)}
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold mr-3 ${
+                        staff.name.startsWith('นาย') 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : staff.name.startsWith('น.ส.') || staff.name.startsWith('นาง')
+                            ? 'bg-pink-100 text-pink-700'
+                            : 'bg-indigo-100 text-indigo-700'
+                      }`}>
+                        <UserIcon className="w-4 h-4" />
                       </div>
                       {staff.name}
                     </div>

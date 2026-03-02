@@ -1,6 +1,7 @@
 import React from 'react';
 import { format, getDaysInMonth, isWeekend, isToday } from 'date-fns';
 import { th } from 'date-fns/locale';
+import { User as UserIcon } from 'lucide-react';
 import { Staff, Shift, ShiftType, User } from '../types';
 import clsx from 'clsx';
 
@@ -78,8 +79,14 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellCli
             <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors group">
               <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-700 sticky left-0 bg-white z-10 border-r border-slate-200 group-hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 transition-all">
-                    {staff.name.charAt(0)}
+                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center border transition-all ${
+                    staff.name.startsWith('นาย') 
+                      ? 'bg-blue-50 text-blue-600 border-blue-100 group-hover:bg-blue-100' 
+                      : staff.name.startsWith('น.ส.') || staff.name.startsWith('นาง')
+                        ? 'bg-pink-50 text-pink-600 border-pink-100 group-hover:bg-pink-100'
+                        : 'bg-slate-100 text-slate-500 border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100'
+                  }`}>
+                    <UserIcon className="w-5 h-5" />
                   </div>
                   <span className="tracking-tight">{staff.name}</span>
                 </div>

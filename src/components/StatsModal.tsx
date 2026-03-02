@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { X, BarChart2, TrendingUp, Users, Wallet, Clock } from 'lucide-react';
+import { X, BarChart2, TrendingUp, Users, Wallet, Clock, User as UserIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { motion } from 'framer-motion';
 import { Staff, Shift } from '../types';
@@ -188,8 +188,13 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
                     <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">
-                            {row.name.charAt(0)}
+                          <div className={clsx(
+                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
+                            row.name.startsWith('นาย') ? "bg-blue-100 text-blue-700" :
+                            (row.name.startsWith('น.ส.') || row.name.startsWith('นาง')) ? "bg-pink-100 text-pink-700" :
+                            "bg-slate-100 text-slate-600"
+                          )}>
+                            <UserIcon className="w-4 h-4" />
                           </div>
                           <span className="text-sm font-semibold text-slate-700">{row.name}</span>
                         </div>
