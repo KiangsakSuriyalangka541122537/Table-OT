@@ -138,25 +138,42 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
         </div>
 
         {/* Signatures */}
-        <div className="grid grid-cols-3 gap-8 text-sm text-center mt-12 px-4">
-          <div>
-            <p className="text-left mb-8">เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</p>
-            <p className="mb-2">ลงชื่อ...........................................................</p>
-            <p>(นายกิตติพงษ์ ชัยศรี)</p>
-            <p>นักวิชาการคอมพิวเตอร์ชำนาญการ</p>
+        <div className="grid grid-cols-3 gap-4 text-[13px] mt-12 px-4">
+          {/* Column 1 */}
+          <div className="flex flex-col">
+            <div className="text-left mb-6">
+              <p>เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสิน</p>
+              <p>มหาราช</p>
+            </div>
+            <div className="text-center mt-4">
+              <p className="mb-2">ลงชื่อ...........................................................</p>
+              <p className="font-bold">(นายกิตติพงษ์ ชัยศรี)</p>
+              <p>นักวิชาการคอมพิวเตอร์ชำนาญการ</p>
+            </div>
           </div>
-          <div>
-            <p className="text-left mb-2">เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</p>
-            <p className="text-left mb-8">เห็นควรอนุมัติ</p>
-            <p className="mb-2">ลงชื่อ...........................................................</p>
-            <p>(นายสมิทธ์ เกิดสินธุ์)</p>
-            <p>นายแพทย์เชี่ยวชาญ</p>
+
+          {/* Column 2 */}
+          <div className="flex flex-col">
+            <div className="text-left mb-2">
+              <p>เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสิน</p>
+              <p>มหาราช</p>
+            </div>
+            <p className="text-left font-bold mb-6">เห็นควรอนุมัติ</p>
+            <div className="text-center">
+              <p className="mb-2">ลงชื่อ...........................................................</p>
+              <p className="font-bold">(นายสมิทธ์ เกิดสินธุ์)</p>
+              <p>นายแพทย์เชี่ยวชาญ</p>
+            </div>
           </div>
-          <div>
-            <p className="text-left mb-8">คำสั่งผู้อำนวยการ อนุมัติ</p>
-            <p className="mb-2">ลงชื่อ...........................................................</p>
-            <p>(นายสมิทธ์ เกิดสินธุ์)</p>
-            <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
+
+          {/* Column 3 */}
+          <div className="flex flex-col">
+            <p className="text-left font-bold mb-10">คำสั่งผู้อำนวยการ อนุมัติ</p>
+            <div className="text-center">
+              <p className="mb-2">ลงชื่อ...........................................................</p>
+              <p className="font-bold">(นายสมิทธ์ เกิดสินธุ์)</p>
+              <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
+            </div>
           </div>
         </div>
       </div>
