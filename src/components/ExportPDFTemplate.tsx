@@ -138,41 +138,47 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
         </div>
 
         {/* Signatures */}
-        <div className="grid grid-cols-3 gap-4 text-[13px] mt-12 px-4">
+        <div className="flex justify-between items-start mt-16 px-10 text-[14px]">
           {/* Column 1 */}
-          <div className="flex flex-col">
-            <div className="text-left mb-6">
-              <p>เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสิน</p>
-              <p>มหาราช</p>
-            </div>
-            <div className="text-center mt-4">
-              <p className="mb-2">ลงชื่อ...........................................................</p>
-              <p className="font-bold">(นายกิตติพงษ์ ชัยศรี)</p>
-              <p>นักวิชาการคอมพิวเตอร์ชำนาญการ</p>
+          <div className="flex flex-col items-center w-1/3">
+            <div className="w-fit">
+              <div className="text-left mb-10 leading-relaxed">
+                <p>เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสิน</p>
+                <p>มหาราช</p>
+              </div>
+              <div className="text-center">
+                <p className="mb-3">ลงชื่อ...........................................................</p>
+                <p className="font-bold mb-1">(นายกิตติพงษ์ ชัยศรี)</p>
+                <p>นักวิชาการคอมพิวเตอร์ชำนาญการ</p>
+              </div>
             </div>
           </div>
 
           {/* Column 2 */}
-          <div className="flex flex-col">
-            <div className="text-left mb-2">
-              <p>เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสิน</p>
-              <p>มหาราช</p>
-            </div>
-            <p className="text-left font-bold mb-6">เห็นควรอนุมัติ</p>
-            <div className="text-center">
-              <p className="mb-2">ลงชื่อ...........................................................</p>
-              <p className="font-bold">(นายสมิทธ์ เกิดสินธุ์)</p>
-              <p>นายแพทย์เชี่ยวชาญ</p>
+          <div className="flex flex-col items-center w-1/3">
+            <div className="w-fit">
+              <div className="text-left mb-2 leading-relaxed">
+                <p>เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสิน</p>
+                <p>มหาราช</p>
+              </div>
+              <p className="text-left font-bold mb-8">เห็นควรอนุมัติ</p>
+              <div className="text-center">
+                <p className="mb-3">ลงชื่อ...........................................................</p>
+                <p className="font-bold mb-1">(นายสมิทธ์ เกิดสินธุ์)</p>
+                <p>นายแพทย์เชี่ยวชาญ</p>
+              </div>
             </div>
           </div>
 
           {/* Column 3 */}
-          <div className="flex flex-col">
-            <p className="text-left font-bold mb-10">คำสั่งผู้อำนวยการ อนุมัติ</p>
-            <div className="text-center">
-              <p className="mb-2">ลงชื่อ...........................................................</p>
-              <p className="font-bold">(นายสมิทธ์ เกิดสินธุ์)</p>
-              <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
+          <div className="flex flex-col items-center w-1/3">
+            <div className="w-fit">
+              <p className="text-left font-bold mb-12">คำสั่งผู้อำนวยการ อนุมัติ</p>
+              <div className="text-center">
+                <p className="mb-3">ลงชื่อ...........................................................</p>
+                <p className="font-bold mb-1">(นายสมิทธ์ เกิดสินธุ์)</p>
+                <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
+              </div>
             </div>
           </div>
         </div>
