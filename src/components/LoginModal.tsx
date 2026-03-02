@@ -31,7 +31,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
         .single();
 
       if (error || !data) {
-        throw new Error('Invalid username or password');
+        throw new Error('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
       }
 
       onLoginSuccess(data);
@@ -79,7 +79,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="admin หรือ kik"
+                placeholder="ชื่อผู้ใช้งาน"
                 required
               />
             </div>

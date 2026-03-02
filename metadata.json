@@ -1,5 +1,5 @@
 {
-  "name": "Hospital Duty Roster",
-  "description": "A responsive web application to manage monthly shift schedules for hospital staff with auto-logic and export features.",
+  "name": "Table-OT",
+  "description": "จัดตารางเวร OT",
   "requestFramePermissions": []
 }
