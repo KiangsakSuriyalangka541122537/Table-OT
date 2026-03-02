@@ -42,6 +42,32 @@ export default function App() {
   const pdfRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const cleanupDuplicates = async () => {
+      try {
+        const { data: staffData } = await supabase.from('staff').select('*');
+        if (staffData) {
+          const seen = new Set();
+          const duplicates: string[] = [];
+          
+          staffData.forEach(s => {
+            const name = s.name.trim();
+            if (seen.has(name)) {
+              duplicates.push(s.id);
+            } else {
+              seen.add(name);
+            }
+          });
+
+          if (duplicates.length > 0) {
+            await supabase.from('staff').delete().in('id', duplicates);
+            fetchData();
+          }
+        }
+      } catch (err) {
+        console.error('Cleanup error:', err);
+      }
+    };
+    cleanupDuplicates();
     fetchData();
   }, [currentMonth]);
 
@@ -54,7 +80,17 @@ export default function App() {
         .select('*')
         .order('created_at');
       if (staffError) throw staffError;
-      setStaffList(staffData || []);
+      
+      // Deduplicate staff by name (keeping the first occurrence)
+      const uniqueStaff = (staffData || []).reduce((acc: Staff[], current) => {
+        const isDuplicate = acc.some(item => item.name.trim() === current.name.trim());
+        if (!isDuplicate) {
+          return [...acc, current];
+        }
+        return acc;
+      }, []);
+      
+      setStaffList(uniqueStaff);
 
       // Fetch Shifts for current month
       const startDate = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1), 'yyyy-MM-dd');
