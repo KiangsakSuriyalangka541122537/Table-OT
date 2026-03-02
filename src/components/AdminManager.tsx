@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, Trash2, Plus, Edit2, User as UserIcon } from 'lucide-react';
+import { X, Users, Trash2, Plus, Edit2, User as UserIcon, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { User, Staff } from '../types';
 import { ShiftSwapRequestsManager } from './ShiftSwapRequestsManager';
@@ -14,27 +14,107 @@ interface AdminManagerProps {
 export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: AdminManagerProps) {
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffPhone, setNewStaffPhone] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleAddStaff = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newStaffName.trim()) return;
+  const handleSyncStaff = async () => {
+    if (!window.confirm('คุณต้องการรีเซ็ตรายชื่อบุคลากรและรหัสผ่านให้เป็นไปตามค่าเริ่มต้นหรือไม่? (ข้อมูลเดิมจะถูกลบ)')) return;
 
     setLoading(true);
     setError('');
 
     try {
-      const { error: insertError } = await supabase
-        .from('staff')
-        .insert([{ name: newStaffName, phone: newStaffPhone }]);
+      // 1. Clear existing staff and users (optional, but requested for cleanup)
+      // For safety, we only delete the duplicate "นายเกรียงศักดิ์ สุริยะลังกา" if it exists
+      // But the user specifically listed the people they want.
+      
+      const defaultStaff = [
+        { name: 'นายกิตติพงษ์ ชัยศรี', username: 'tor', password: 'tor', role: 'staff' },
+        { name: 'น.ส. วรรณภา สอนเสือ', username: 'kik', password: 'kik', role: 'admin' },
+        { name: 'น.ส.ศิรินชา พึ่งวงษ์เขียน', username: 'jhim', password: 'jhim', role: 'staff' },
+        { name: 'น.ส.นิธิพร ใสปา', username: 'parn', password: 'parn', role: 'staff' },
+        { name: 'นาย เกรียงศักดิ์ สุริยะลังกา', username: 'top', password: 'top', role: 'staff' },
+        { name: 'นายวิทวัส หมายมั่น', username: 'team', password: 'team', role: 'staff' },
+      ];
 
-      if (insertError) throw insertError;
+      // Delete all current staff and users to start fresh as requested
+      await supabase.from('staff').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+      for (const s of defaultStaff) {
+        // Insert Staff
+        const { data: staffData, error: staffError } = await supabase
+          .from('staff')
+          .insert([{ name: s.name }])
+          .select()
+          .single();
+
+        if (staffError) throw staffError;
+
+        // Insert User
+        const { error: userError } = await supabase
+          .from('users')
+          .insert([{
+            username: s.username,
+            password: s.password,
+            name: s.name,
+            role: s.role
+          }]);
+
+        if (userError) throw userError;
+      }
+
+      onStaffUpdate();
+      alert('ตั้งค่าบุคลากรเริ่มต้นเรียบร้อยแล้ว');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaffName.trim() || !username.trim() || !password.trim()) {
+      setError('กรุณากรอกข้อมูลให้ครบถ้วน (ชื่อ, ชื่อผู้ใช้งาน, รหัสผ่าน)');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // 1. Create Staff
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .insert([{ name: newStaffName, phone: newStaffPhone }])
+        .select()
+        .single();
+
+      if (staffError) throw staffError;
+
+      // 2. Create User
+      const { error: userError } = await supabase
+        .from('users')
+        .insert([{
+          username,
+          password,
+          name: newStaffName,
+          role: isAdmin ? 'admin' : 'staff'
+        }]);
+
+      if (userError) throw userError;
 
       setNewStaffName('');
       setNewStaffPhone('');
+      setUsername('');
+      setPassword('');
+      setIsAdmin(false);
       onStaffUpdate();
     } catch (err: any) {
       setError(err.message);
@@ -43,19 +123,28 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
     }
   };
 
-  const handleDeleteStaff = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this staff member? All their shifts will also be deleted.')) return;
+  const handleDeleteStaff = async (id: string, name: string) => {
+    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ ${name}? ข้อมูลการอยู่เวรและบัญชีผู้ใช้งานจะถูกลบออกทั้งหมด`)) return;
 
     setLoading(true);
     setError('');
 
     try {
-      const { error: deleteError } = await supabase
+      // 1. Delete from staff
+      const { error: deleteStaffError } = await supabase
         .from('staff')
         .delete()
         .eq('id', id);
 
-      if (deleteError) throw deleteError;
+      if (deleteStaffError) throw deleteStaffError;
+
+      // 2. Delete from users (by name, since we don't have a direct link in this schema)
+      const { error: deleteUserError } = await supabase
+        .from('users')
+        .delete()
+        .eq('name', name);
+
+      if (deleteUserError) throw deleteUserError;
 
       onStaffUpdate();
     } catch (err: any) {
@@ -75,14 +164,25 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
           <X className="w-6 h-6" />
         </button>
 
-        <div className="flex items-center mb-6">
-          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
-            <Users className="w-5 h-5 text-indigo-600" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
+              <Users className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">บุคลากร</h2>
+              <p className="text-gray-500 text-sm">จัดการรายชื่อบุคลากรและสิทธิ์การใช้งาน</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">จัดการพนักงาน</h2>
-            <p className="text-gray-500 text-sm">เพิ่มหรือลบพนักงานโรงพยาบาล</p>
-          </div>
+          <button
+            onClick={handleSyncStaff}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+            title="รีเซ็ตเป็นรายชื่อเริ่มต้น"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            ตั้งค่าบุคลากรเริ่มต้น
+          </button>
         </div>
 
         {error && (
@@ -94,31 +194,62 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
         {/* Staff Management Section */}
         <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-            <Plus className="w-4 h-4 mr-2" /> เพิ่มพนักงานใหม่
+            <Plus className="w-4 h-4 mr-2" /> เพิ่มบุคลากรใหม่
           </h3>
-          <form onSubmit={handleAddStaff} className="flex gap-3">
-            <input
-              type="text"
-              placeholder="ชื่อ-นามสกุล"
-              value={newStaffName}
-              onChange={(e) => setNewStaffName(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-            <input
-              type="text"
-              placeholder="เบอร์โทรศัพท์ (ไม่บังคับ)"
-              value={newStaffPhone}
-              onChange={(e) => setNewStaffPhone(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-            <button
-              type="submit"
-              disabled={loading || !newStaffName.trim()}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium text-sm"
-            >
-              Add Staff
-            </button>
+          <form onSubmit={handleAddStaff} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                placeholder="ชื่อ-นามสกุล"
+                value={newStaffName}
+                onChange={(e) => setNewStaffName(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required
+              />
+              <input
+                type="text"
+                placeholder="เบอร์โทรศัพท์"
+                value={newStaffPhone}
+                onChange={(e) => setNewStaffPhone(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                placeholder="ชื่อผู้ใช้งาน (Username)"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required
+              />
+              <input
+                type="password"
+                placeholder="รหัสผ่าน (Password)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAdmin}
+                  onChange={(e) => setIsAdmin(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm text-gray-600">สิทธิ์ผู้ดูแลระบบ (Admin)</span>
+              </label>
+              <button
+                type="submit"
+                disabled={loading || !newStaffName.trim() || !username.trim() || !password.trim()}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium text-sm"
+              >
+                {loading ? 'กำลังบันทึก...' : 'เพิ่มบุคลากร'}
+              </button>
+            </div>
           </form>
         </div>
 
@@ -151,7 +282,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{staff.phone || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      onClick={() => handleDeleteStaff(staff.id)}
+                      onClick={() => handleDeleteStaff(staff.id, staff.name)}
                       disabled={loading}
                       className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full transition-colors"
                       title="ลบพนักงาน"

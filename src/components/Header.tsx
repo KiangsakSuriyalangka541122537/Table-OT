@@ -107,7 +107,7 @@ export function Header({
                 >
                   {isPublished ? 'เผยแพร่แล้ว' : 'โหมดร่าง'}
                 </button>
-                <button onClick={onAdminClick} className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all" title="ตั้งค่าผู้ดูแล">
+                <button onClick={onAdminClick} className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all" title="จัดการบุคลากร">
                   <Settings className="w-4 h-4" />
                 </button>
               </div>
