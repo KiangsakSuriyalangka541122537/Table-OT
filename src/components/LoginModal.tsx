@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Lock, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +13,20 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const usernameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setUsername('');
+      setPassword('');
+      setError('');
+      // Use a small timeout to ensure the modal animation has started/DOM is ready
+      const timer = setTimeout(() => {
+        usernameRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -75,12 +89,14 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                 <User className="h-5 w-5 text-gray-400" />
               </div>
               <input
+                ref={usernameRef}
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="ชื่อผู้ใช้งาน"
                 required
+                autoComplete="off"
               />
             </div>
           </div>
@@ -98,6 +114,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="••••••••"
                 required
+                autoComplete="new-password"
               />
             </div>
           </div>
