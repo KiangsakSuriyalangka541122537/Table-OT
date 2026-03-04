@@ -22,27 +22,22 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
 
     const rows = staffList.map((staff, index) => {
       const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-      let totalShifts = 0;
-      let totalPay = 0;
+      
+      const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
+      const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
+      const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
+
+      const totalShifts = mCount + ((aCount + nCount) / 2);
+      const totalPay = totalShifts * 750;
 
       const shiftData = days.map(day => {
-        if (day > daysInMonth) return ''; // Empty for days beyond month length
+        if (day > daysInMonth) return '';
         const dateStr = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day), 'yyyy-MM-dd');
         const shift = staffShifts.find(s => s.date === dateStr);
         if (shift) {
-          if (shift.shift_type === 'M') {
-            totalShifts += 1;
-            totalPay += 750;
-            return 'ช';
-          } else if (shift.shift_type === 'A') {
-            totalShifts += 0.5;
-            totalPay += 375;
-            return 'บ';
-          } else if (shift.shift_type === 'N') {
-            totalShifts += 0.5;
-            totalPay += 375;
-            return 'ด';
-          }
+          if (shift.shift_type === 'M') return 'ช';
+          if (shift.shift_type === 'A') return 'บ';
+          if (shift.shift_type === 'N') return 'ด';
         }
         return '';
       });

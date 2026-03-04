@@ -180,51 +180,72 @@ export default function App() {
     const { staffId, dateStr } = editingCell;
 
     try {
-      // 1. Check Single Night Rule
-      if (newShiftType === 'N') {
-        const existingNightShift = shifts.find(s => s.date === dateStr && s.shift_type === 'N' && s.staff_id !== staffId);
-        if (existingNightShift) {
-          alert('Only one Night shift is allowed per day across all staff.');
-          return;
+      // Find current shift for this cell
+      const currentShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
+      const currentType = currentShift?.shift_type;
+
+      // Clean up old linked shifts if we are changing the type
+      if (currentType !== newShiftType) {
+        if (currentType === 'A') {
+          const nextDay = format(addDays(new Date(dateStr), 1), 'yyyy-MM-dd');
+          const nextShift = shifts.find(s => s.staff_id === staffId && s.date === nextDay);
+          if (nextShift?.shift_type === 'N') {
+            await supabase.from('shifts').delete().eq('staff_id', staffId).eq('date', nextDay);
+          }
+        } else if (currentType === 'N') {
+          const prevDay = format(addDays(new Date(dateStr), -1), 'yyyy-MM-dd');
+          const prevShift = shifts.find(s => s.staff_id === staffId && s.date === prevDay);
+          if (prevShift?.shift_type === 'A') {
+            await supabase.from('shifts').delete().eq('staff_id', staffId).eq('date', prevDay);
+          }
         }
       }
 
-      // 2. Save current shift
+      // 1. Handle Deletion (null)
       if (newShiftType === null) {
-        // Delete shift
         await supabase.from('shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
-      } else {
-        // Upsert shift
+      } 
+      // 2. Handle Morning Shift (M)
+      else if (newShiftType === 'M') {
         await supabase.from('shifts').upsert({
           staff_id: staffId,
           date: dateStr,
-          shift_type: newShiftType
+          shift_type: 'M'
         }, { onConflict: 'staff_id,date' });
       }
-
-      // 3. A -> N Rule (Auto-Logic)
-      if (newShiftType === 'A') {
-        const nextDay = addDays(new Date(dateStr), 1);
-        const nextDateStr = format(nextDay, 'yyyy-MM-dd');
+      // 3. Handle Afternoon Shift (A) -> Auto add N next day
+      else if (newShiftType === 'A') {
+        const nextDay = format(addDays(new Date(dateStr), 1), 'yyyy-MM-dd');
         
-        // Check if next day already has a night shift by someone else
-        const { data: existingNextNight } = await supabase
-          .from('shifts')
-          .select('*')
-          .eq('date', nextDateStr)
-          .eq('shift_type', 'N')
-          .neq('staff_id', staffId)
-          .single();
-
-        if (!existingNextNight) {
-          await supabase.from('shifts').upsert({
-            staff_id: staffId,
-            date: nextDateStr,
-            shift_type: 'N'
-          }, { onConflict: 'staff_id,date' });
-        } else {
-          alert(`Warning: Could not auto-assign Night shift on ${nextDateStr} because someone else already has it.`);
+        // Check if next day already has a night shift by someone else (Rule: Only one N per day)
+        const otherNight = shifts.find(s => s.date === nextDay && s.shift_type === 'N' && s.staff_id !== staffId);
+        if (otherNight) {
+          alert(`ไม่สามารถลงเวรบ่ายได้ เนื่องจากวันที่ ${nextDay} มีผู้ลงเวรดึกแล้ว`);
+          return;
         }
+
+        // Save A today and N tomorrow
+        await supabase.from('shifts').upsert([
+          { staff_id: staffId, date: dateStr, shift_type: 'A' },
+          { staff_id: staffId, date: nextDay, shift_type: 'N' }
+        ], { onConflict: 'staff_id,date' });
+      }
+      // 4. Handle Night Shift (N) -> Auto add A previous day
+      else if (newShiftType === 'N') {
+        const prevDay = format(addDays(new Date(dateStr), -1), 'yyyy-MM-dd');
+        
+        // Check if today already has a night shift by someone else
+        const otherNight = shifts.find(s => s.date === dateStr && s.shift_type === 'N' && s.staff_id !== staffId);
+        if (otherNight) {
+          alert(`ไม่สามารถลงเวรดึกได้ เนื่องจากวันนี้มีผู้ลงเวรดึกแล้ว`);
+          return;
+        }
+
+        // Save A yesterday and N today
+        await supabase.from('shifts').upsert([
+          { staff_id: staffId, date: prevDay, shift_type: 'A' },
+          { staff_id: staffId, date: dateStr, shift_type: 'N' }
+        ], { onConflict: 'staff_id,date' });
       }
 
       // Log action

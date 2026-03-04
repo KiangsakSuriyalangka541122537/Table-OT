@@ -22,11 +22,12 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
       const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
       const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
       
-      // Calculate total shifts (M=1, A=0.5, N=0.5)
-      const totalShifts = mCount + (aCount * 0.5) + (nCount * 0.5);
+      // Calculate total shifts: M is 1 shift, A+N pair is 1 shift
+      // We use (A+N)/2 to handle month boundaries correctly
+      const totalShifts = mCount + ((aCount + nCount) / 2);
       
-      // Calculate OT pay (M=750, A=375, N=375)
-      const otPay = (mCount * 750) + (aCount * 375) + (nCount * 375);
+      // Calculate OT pay: 750 per full shift
+      const otPay = totalShifts * 750;
 
       return {
         name: staff.name,

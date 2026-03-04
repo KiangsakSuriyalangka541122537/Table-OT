@@ -13,9 +13,9 @@ interface ShiftEditModalProps {
 }
 
 const shiftOptions: { type: ShiftType | null; label: string; icon: React.ElementType; color: string; desc: string }[] = [
-  { type: 'M', label: 'เช้า (ช)', icon: Sun, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300', desc: '08:00 - 16:00' },
-  { type: 'A', label: 'บ่าย (บ)', icon: Sunset, color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-300', desc: '16:00 - 24:00' },
-  { type: 'N', label: 'ดึก (ด)', icon: Moon, color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-300', desc: '24:00 - 08:00' },
+  { type: 'M', label: 'เช้า (ช)', icon: Sun, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300', desc: '08:00 - 16:00 (750.-)' },
+  { type: 'A', label: 'บ่าย (บ)', icon: Sunset, color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-300', desc: '16:00 - 24:00 (+ดึกวันถัดไป 750.-)' },
+  { type: 'N', label: 'ดึก (ด)', icon: Moon, color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-300', desc: '24:00 - 08:00 (+บ่ายวันก่อนหน้า 750.-)' },
   { type: null, label: 'หยุด (O)', icon: Ban, color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300', desc: 'ไม่มีกะการทำงาน' },
 ];
 
