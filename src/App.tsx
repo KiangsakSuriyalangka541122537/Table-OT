@@ -44,6 +44,20 @@ export default function App() {
   useEffect(() => {
     const cleanupDuplicates = async () => {
       try {
+        // 1. Migration: Update น.ส. to นางสาว
+        const { data: staffToUpdate } = await supabase.from('staff').select('id, name');
+        if (staffToUpdate) {
+          for (const s of staffToUpdate) {
+            if (s.name.includes('น.ส.')) {
+              const newName = s.name.replace(/น\.ส\./g, 'นางสาว');
+              await supabase.from('staff').update({ name: newName }).eq('id', s.id);
+              // Also update users table if exists
+              await supabase.from('users').update({ name: newName }).eq('name', s.name);
+            }
+          }
+        }
+
+        // 2. Cleanup duplicates
         const { data: staffData } = await supabase.from('staff').select('*');
         if (staffData) {
           const seen = new Set();

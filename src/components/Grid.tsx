@@ -82,7 +82,7 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellCli
                   <div className={`h-9 w-9 rounded-xl flex items-center justify-center border transition-all ${
                     staff.name.startsWith('นาย') 
                       ? 'bg-blue-50 text-blue-600 border-blue-100 group-hover:bg-blue-100' 
-                      : staff.name.startsWith('น.ส.') || staff.name.startsWith('นาง')
+                      : staff.name.startsWith('น.ส.') || staff.name.startsWith('นางสาว') || staff.name.startsWith('นาง')
                         ? 'bg-pink-50 text-pink-600 border-pink-100 group-hover:bg-pink-100'
                         : 'bg-slate-100 text-slate-500 border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100'
                   }`}>

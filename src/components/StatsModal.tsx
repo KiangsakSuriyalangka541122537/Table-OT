@@ -191,7 +191,7 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
                           <div className={clsx(
                             "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
                             row.name.startsWith('นาย') ? "bg-blue-100 text-blue-700" :
-                            (row.name.startsWith('น.ส.') || row.name.startsWith('นาง')) ? "bg-pink-100 text-pink-700" :
+                            (row.name.startsWith('น.ส.') || row.name.startsWith('นางสาว') || row.name.startsWith('นาง')) ? "bg-pink-100 text-pink-700" :
                             "bg-slate-100 text-slate-600"
                           )}>
                             <UserIcon className="w-4 h-4" />

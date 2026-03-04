@@ -35,9 +35,9 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
       
       const defaultStaff = [
         { name: 'นายกิตติพงษ์ ชัยศรี', username: 'tor', password: 'tor', role: 'staff' },
-        { name: 'น.ส. วรรณภา สอนเสือ', username: 'kik', password: 'kik', role: 'admin' },
-        { name: 'น.ส.ศิรินชา พึ่งวงษ์เขียน', username: 'jhim', password: 'jhim', role: 'staff' },
-        { name: 'น.ส.นิธิพร ใสปา', username: 'parn', password: 'parn', role: 'staff' },
+        { name: 'นางสาว วรรณภา สอนเสือ', username: 'kik', password: 'kik', role: 'admin' },
+        { name: 'นางสาวศิรินชา พึ่งวงษ์เขียน', username: 'jhim', password: 'jhim', role: 'staff' },
+        { name: 'นางสาวนิธิพร ใสปา', username: 'parn', password: 'parn', role: 'staff' },
         { name: 'นาย เกรียงศักดิ์ สุริยะลังกา', username: 'top', password: 'top', role: 'staff' },
         { name: 'นายวิทวัส หมายมั่น', username: 'team', password: 'team', role: 'staff' },
       ];
@@ -270,7 +270,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold mr-3 ${
                         staff.name.startsWith('นาย') 
                           ? 'bg-blue-100 text-blue-700' 
-                          : staff.name.startsWith('น.ส.') || staff.name.startsWith('นาง')
+                          : staff.name.startsWith('น.ส.') || staff.name.startsWith('นางสาว') || staff.name.startsWith('นาง')
                             ? 'bg-pink-100 text-pink-700'
                             : 'bg-indigo-100 text-indigo-700'
                       }`}>
