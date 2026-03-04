@@ -62,122 +62,223 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
     });
 
     return (
-      <div 
-        ref={ref} 
-        className="p-6 w-[297mm] min-h-[210mm] box-border" 
-        style={{ fontFamily: 'Sarabun, Kanit, sans-serif', backgroundColor: '#ffffff', color: '#000000' }}
-      >
+      <div ref={ref} className="bg-white">
         <style>{`
-          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; margin-bottom: 16px; table-layout: fixed; }
+          .pdf-page {
+            padding: 40px;
+            width: 297mm;
+            min-height: 210mm;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Sarabun', 'Kanit', sans-serif;
+            position: relative;
+          }
+          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; margin-bottom: 12px; table-layout: fixed; }
           .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 2px; font-weight: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-          .pdf-table th { padding: 2px; }
-          .pdf-bg-gray { background-color: #e5e7eb !important; }
+          .pdf-table th { padding: 4px 2px; font-weight: bold; background-color: #f9fafb; }
+          .pdf-bg-gray { background-color: #f3f4f6 !important; }
           .pdf-text-red { color: #dc2626 !important; font-weight: bold; }
+          .signature-line { border-bottom: 1px dotted #000; width: 150px; display: inline-block; margin: 0 4px; }
         `}</style>
 
-        {/* Header */}
-        <div className="text-center mb-6 space-y-2">
-          <h1 className="text-xl font-bold">หลักฐานการขออนุมัติปฏิบัติงานนอกเวลาราชการ</h1>
-          <p className="text-lg">เวรเช้า 08.00 – 16.00 น. เวรบ่าย 16.00 – 24.00 น. เวรดึก 24.00 – 08.00 น.</p>
-          <p className="text-lg">
-            ส่วนราชการ โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช ประจำเดือน <span className="pdf-text-red">{monthName}</span> พ.ศ. {year} งานศูนย์คอมพิวเตอร์
-          </p>
-        </div>
-
-        {/* Table */}
-        <table className="pdf-table">
-          <thead>
-            <tr>
-              <th className="w-8" rowSpan={2}>ลำดับ<br/>ที่</th>
-              <th className="w-40" rowSpan={2}>ชื่อ -สกุล</th>
-              <th className="w-32" rowSpan={2}>ตำแหน่ง</th>
-              <th className="w-12" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
-              <th colSpan={31}>วันที่ขึ้นปฏิบัติงาน</th>
-              <th className="w-12" rowSpan={2}>จำนวน<br/>เวร</th>
-              <th className="w-16" rowSpan={2}>จำนวนเงิน</th>
-            </tr>
-            <tr>
-              {days.map((day) => (
-                <th key={day} className="w-5 p-0.5 text-xs">{day}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i}>
-                <td>{row.no}</td>
-                <td className="text-left px-2 whitespace-nowrap">{row.name}</td>
-                <td className="text-left px-2 whitespace-nowrap">{row.position}</td>
-                <td>{row.rate}</td>
-                {days.map((day, idx) => {
-                  const isWeekendDay = day <= daysInMonth && isWeekend(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
-                  return (
-                    <td key={idx} className={`p-0.5 ${isWeekendDay ? 'pdf-bg-gray' : ''}`}>
-                      {row.shifts[idx]}
-                    </td>
-                  );
-                })}
-                <td>{row.totalShifts}</td>
-                <td>{row.totalPay.toLocaleString()}</td>
-              </tr>
-            ))}
-            {/* Total Row */}
-            <tr>
-              <td style={{ borderRight: 'none' }} colSpan={35}></td>
-              <td style={{ fontWeight: 'bold' }}>{grandTotalShifts}</td>
-              <td style={{ fontWeight: 'bold' }}>{grandTotalPay.toLocaleString()}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div className="flex flex-col items-start mb-8 pl-4">
-          <p className="text-sm font-bold mb-4">หมายเหตุ : เวรบ่ายและดึก รวมกัน 750 บาท</p>
-          <div className="w-full text-center">
-            <p className="text-base font-bold">รวมการจ่ายเงินทั้งสิ้น (ตัวอักษร) ({getThaiBaht(grandTotalPay)})</p>
+        {/* Page 1: Request for Approval */}
+        <div id="pdf-page-1" className="pdf-page">
+          <div className="text-center mb-6 space-y-1">
+            <h1 className="text-xl font-bold">หลักฐานการขออนุมัติปฏิบัติงานนอกเวลาราชการ</h1>
+            <p className="text-sm">เวรเช้า 08.00 – 16.00 น. เวรบ่าย 16.00 – 24.00 น. เวรดึก 24.00 – 08.00 น.</p>
+            <p className="text-base">
+              ส่วนราชการ โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช ประจำเดือน <span className="pdf-text-red">{monthName}</span> พ.ศ. {year} งานศูนย์คอมพิวเตอร์
+            </p>
           </div>
-        </div>
 
-        {/* Signatures */}
-        <div className="flex justify-between items-start mt-16 px-10 text-[14px]">
-          {/* Column 1 */}
-          <div className="flex flex-col items-center w-1/3">
-            <div className="w-fit">
-              <div className="text-left mb-10 leading-relaxed">
+          <table className="pdf-table">
+            <thead>
+              <tr>
+                <th className="w-8" rowSpan={2}>ลำดับ<br/>ที่</th>
+                <th className="w-40" rowSpan={2}>ชื่อ -สกุล</th>
+                <th className="w-32" rowSpan={2}>ตำแหน่ง</th>
+                <th className="w-12" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
+                <th colSpan={31}>วันที่ขึ้นปฏิบัติงาน</th>
+                <th className="w-12" rowSpan={2}>จำนวน<br/>เวร</th>
+                <th className="w-16" rowSpan={2}>จำนวนเงิน</th>
+              </tr>
+              <tr>
+                {days.map((day) => (
+                  <th key={day} className="w-5 p-0 text-[9px]">{day}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i}>
+                  <td>{row.no}</td>
+                  <td className="text-left px-2">{row.name}</td>
+                  <td className="text-left px-2">{row.position}</td>
+                  <td>{row.rate}</td>
+                  {days.map((day, idx) => {
+                    const isWeekendDay = day <= daysInMonth && isWeekend(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+                    return (
+                      <td key={idx} className={isWeekendDay ? 'pdf-bg-gray' : ''}>
+                        {row.shifts[idx]}
+                      </td>
+                    );
+                  })}
+                  <td>{row.totalShifts}</td>
+                  <td>{row.totalPay.toLocaleString()}</td>
+                </tr>
+              ))}
+              <tr>
+                <td colSpan={35} className="text-right font-bold px-4">รวม</td>
+                <td className="font-bold">{grandTotalShifts}</td>
+                <td className="font-bold">{grandTotalPay.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="flex flex-col items-start mb-6 pl-4">
+            <p className="text-xs font-bold mb-2">หมายเหตุ : เวรบ่ายและดึก รวมกัน 750 บาท</p>
+            <div className="w-full text-center">
+              <p className="text-sm font-bold">รวมการจ่ายเงินทั้งสิ้น (ตัวอักษร) ( {getThaiBaht(grandTotalPay)} )</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mt-12 px-4 text-[12px]">
+            <div className="text-center space-y-8">
+              <div className="text-left leading-relaxed">
                 <p>เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสิน</p>
                 <p>มหาราช</p>
               </div>
-              <div className="text-center">
-                <p className="mb-3">ลงชื่อ...........................................................</p>
-                <p className="font-bold mb-1">(นายกิตติพงษ์ ชัยศรี)</p>
+              <div>
+                <p className="mb-2">ลงชื่อ...........................................................</p>
+                <p className="font-bold">(นายกิตติพงษ์ ชัยศรี)</p>
                 <p>นักวิชาการคอมพิวเตอร์ชำนาญการ</p>
               </div>
             </div>
-          </div>
 
-          {/* Column 2 */}
-          <div className="flex flex-col items-center w-1/3">
-            <div className="w-fit">
-              <div className="text-left mb-2 leading-relaxed">
+            <div className="text-center space-y-4">
+              <div className="text-left leading-relaxed">
                 <p>เรียนผู้อำนวยการ โรงพยาบาลสมเด็จพระเจ้าตากสิน</p>
                 <p>มหาราช</p>
               </div>
-              <p className="text-left font-bold mb-8">เห็นควรอนุมัติ</p>
-              <div className="text-center">
-                <p className="mb-3">ลงชื่อ...........................................................</p>
-                <p className="font-bold mb-1">(นายสมิทธ์ เกิดสินธุ์)</p>
+              <p className="text-left font-bold">เห็นควรอนุมัติ</p>
+              <div>
+                <p className="mb-2">ลงชื่อ...........................................................</p>
+                <p className="font-bold">(นายสมิทธ์ เกิดสินธุ์)</p>
                 <p>นายแพทย์เชี่ยวชาญ</p>
               </div>
             </div>
+
+            <div className="text-center space-y-12">
+              <p className="text-left font-bold">คำสั่งผู้อำนวยการ อนุมัติ</p>
+              <div>
+                <p className="mb-2">ลงชื่อ...........................................................</p>
+                <p className="font-bold">(นายสมิทธ์ เกิดสินธุ์)</p>
+                <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Page 2: Payment Evidence */}
+        <div id="pdf-page-2" className="pdf-page">
+          <div className="text-center mb-6 space-y-1">
+            <h1 className="text-lg font-bold">หลักฐานการจ่ายค่าตอบแทนการปฏิบัติงานนอกเวลาราชการ</h1>
+            <p className="text-sm font-bold">
+              ส่วนราชการโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช ประจำเดือน <span className="pdf-text-red">{monthName}</span> พ.ศ. {year} กลุ่มงานเทคโนโลยีสารสนเทศ และ กลุ่มงานสุขภาพดิจิทัล
+            </p>
           </div>
 
-          {/* Column 3 */}
-          <div className="flex flex-col items-center w-1/3">
-            <div className="w-fit">
-              <p className="text-left font-bold mb-12">คำสั่งผู้อำนวยการ อนุมัติ</p>
-              <div className="text-center">
-                <p className="mb-3">ลงชื่อ...........................................................</p>
-                <p className="font-bold mb-1">(นายสมิทธ์ เกิดสินธุ์)</p>
+          <table className="pdf-table">
+            <thead>
+              <tr>
+                <th className="w-8" rowSpan={2}>ลำดับ<br/>ที่</th>
+                <th className="w-40" rowSpan={2}>ชื่อ -สกุล</th>
+                <th className="w-32" rowSpan={2}>ตำแหน่ง</th>
+                <th className="w-12" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
+                <th colSpan={31}>วันที่ขึ้นปฏิบัติงาน</th>
+                <th className="w-12" rowSpan={2}>จำนวน<br/>เวร</th>
+                <th className="w-16" rowSpan={2}>จำนวนเงิน</th>
+                <th className="w-24" rowSpan={2}>ลายมือชื่อ</th>
+              </tr>
+              <tr>
+                {days.map((day) => (
+                  <th key={day} className="w-5 p-0 text-[9px]">{day}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i}>
+                  <td>{row.no}</td>
+                  <td className="text-left px-2">{row.name}</td>
+                  <td className="text-left px-2">{row.position}</td>
+                  <td>{row.rate}</td>
+                  {days.map((day, idx) => {
+                    const isWeekendDay = day <= daysInMonth && isWeekend(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+                    return (
+                      <td key={idx} className={isWeekendDay ? 'pdf-bg-gray' : ''}>
+                        {row.shifts[idx] ? ' ' : ''} {/* Empty cells for payment evidence as per image */}
+                      </td>
+                    );
+                  })}
+                  <td>{row.totalShifts}</td>
+                  <td>{row.totalPay.toLocaleString()}</td>
+                  <td></td>
+                </tr>
+              ))}
+              <tr>
+                <td colSpan={35} className="text-right font-bold px-4">รวม</td>
+                <td className="font-bold">{grandTotalShifts}</td>
+                <td className="font-bold">{grandTotalPay.toLocaleString()}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="flex flex-col items-start mb-4 pl-4">
+            <p className="text-xs font-bold mb-2">หมายเหตุ : เวรบ่ายและดึก รวมกัน 750 บาท</p>
+            <div className="w-full text-center mb-4">
+              <p className="text-sm font-bold">รวมการจ่ายเงินทั้งสิ้น (ตัวอักษร) ( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {getThaiBaht(grandTotalPay)} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</p>
+            </div>
+            <p className="text-sm font-bold">ขอรับรองว่าผู้มีรายชื่อข้างต้นได้ขึ้นปฏิบัติงาน นอกเวลาราชการจริง</p>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 mt-10 text-[11px]">
+            <div className="text-center space-y-6">
+              <p>ลงชื่อ...........................................................</p>
+              <div>
+                <p className="font-bold">(นายกิตติพงษ์ ชัยศรี)</p>
+                <p>นักวิชาการคอมพิวเตอร์ชำนาญการ</p>
+                <p>หัวหน้ากลุ่มงานเทคโนโลยีสารสนเทศ</p>
+              </div>
+            </div>
+
+            <div className="text-center space-y-6">
+              <p className="text-left font-bold mb-2">ตรวจสอบแล้วถูกต้องเห็นควรอนุมัติ</p>
+              <p>ลงชื่อ...........................................................</p>
+              <div>
+                <p className="font-bold">(นายสมิทธ์ เกิดสินธุ์)</p>
+                <p>นายแพทย์เชี่ยวชาญ</p>
                 <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
+              </div>
+            </div>
+
+            <div className="text-center space-y-6">
+              <p className="text-left font-bold mb-2">ได้ตรวจสอบแล้วถูกต้องเห็นควรพิจารณา อนุมัติ</p>
+              <p>ลงชื่อ...........................................................</p>
+              <div>
+                <p className="font-bold">(นางสาว ทิวารินทร์ ทองจรูญ)</p>
+                <p>นักวิชาการเงินและบัญชี</p>
+              </div>
+            </div>
+
+            <div className="text-center space-y-6">
+              <p className="text-left font-bold mb-2">คำสั่งผู้อำนวยการอนุมัติ</p>
+              <p>ลงชื่อ...........................................................</p>
+              <div>
+                <p className="font-bold">(นายมงคล ลือชูวงศ์)</p>
+                <p>ผู้อำนวยการโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</p>
               </div>
             </div>
           </div>

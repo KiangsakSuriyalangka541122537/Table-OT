@@ -249,28 +249,34 @@ export default function App() {
     }
 
     try {
-      const element = pdfRef.current;
+      const container = pdfRef.current;
+      const pages = container.querySelectorAll('.pdf-page');
       
-      // Use html-to-image instead of html2canvas to avoid Tailwind v4 oklch parsing errors
-      const dataUrl = await toPng(element, { 
-        quality: 1.0,
-        pixelRatio: 2,
-        backgroundColor: '#ffffff',
-        style: {
-          transform: 'scale(1)',
-          transformOrigin: 'top left'
-        }
-      });
-      
-      // A4 Landscape size is 297mm x 210mm
+      if (pages.length === 0) {
+        alert('ไม่พบหน้าเอกสารสำหรับสร้าง PDF');
+        return;
+      }
+
       const pdf = new jsPDF('l', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i] as HTMLElement;
+        
+        const dataUrl = await toPng(page, { 
+          quality: 1.0,
+          pixelRatio: 2,
+          backgroundColor: '#ffffff',
+        });
+
+        if (i > 0) {
+          pdf.addPage('a4', 'l');
+        }
+
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
       
-      // Calculate height based on aspect ratio of the generated image
-      const imgProps = pdf.getImageProperties(dataUrl);
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
-      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Roster_${monthKey}.pdf`);
     } catch (error: any) {
       console.error('Error exporting PDF:', error);
