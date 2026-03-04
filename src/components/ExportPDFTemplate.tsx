@@ -71,13 +71,14 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
             box-sizing: border-box;
             background-color: #ffffff;
             color: #000000;
-            font-family: 'Sarabun', 'Kanit', sans-serif;
+            font-family: 'Sarabun', sans-serif;
           }
+          .pdf-page * { font-family: 'Sarabun', sans-serif; }
           .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; margin-bottom: 4px; table-layout: fixed; }
           .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 2px; font-weight: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
           .pdf-table th { padding: 4px 2px; font-weight: bold; }
           .pdf-bg-gray { background-color: #d1d5db !important; }
-          .pdf-text-red { color: #000000 !important; } /* Changed to black as per image */
+          .pdf-text-red { color: #000000 !important; }
         `}</style>
 
         {/* Page 1: Payment Evidence (Only Page) */}
