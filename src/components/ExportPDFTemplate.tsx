@@ -128,13 +128,15 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
                 </tr>
               ))}
               <tr>
-                <td colSpan={35} className="text-left font-bold px-2 text-[10px]">หมายเหตุ : เวรบ่ายและดึก รวมกัน 750 บาท</td>
+                <td colSpan={35} style={{ border: 'none' }}></td>
                 <td className="font-bold">{grandTotalShifts}</td>
                 <td className="font-bold">{grandTotalPay}</td>
                 <td style={{ border: 'none' }}></td>
               </tr>
             </tbody>
           </table>
+
+          <div className="text-left font-bold text-[10px] mt-1">หมายเหตุ : เวรบ่ายและดึก รวมกัน 750 บาท</div>
 
           <div className="w-full text-center mt-4 mb-6">
             <p className="text-sm">รวมการจ่ายเงินทั้งสิ้น (ตัวอักษร) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {getThaiBaht(grandTotalPay)} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</p>
