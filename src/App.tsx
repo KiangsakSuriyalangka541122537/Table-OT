@@ -38,6 +38,9 @@ export default function App() {
   const [isShiftEditOpen, setIsShiftEditOpen] = useState(false);
   const [editingCell, setEditingCell] = useState<{ staffId: string; dateStr: string; currentShift: ShiftType | undefined } | null>(null);
 
+  // Shift Move/Swap state (Admin)
+  const [selectedShiftForMove, setSelectedShiftForMove] = useState<{ staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null>(null);
+
   const monthKey = format(currentMonth, 'yyyy-MM');
   const isAdmin = user?.role === 'admin';
   const pdfRef = React.useRef<HTMLDivElement>(null);
@@ -145,10 +148,53 @@ export default function App() {
     }
   };
 
-  const handleCellClick = (staffId: string, dateStr: string, currentShift: ShiftType | undefined) => {
+  const handleCellClick = async (staffId: string, dateStr: string, currentShift: ShiftType | undefined) => {
     if (!isAdmin) return;
-    setEditingCell({ staffId, dateStr, currentShift });
-    setIsShiftEditOpen(true);
+
+    if (selectedShiftForMove) {
+      if (selectedShiftForMove.staffId === staffId && selectedShiftForMove.dateStr === dateStr) {
+        // Clicked the same cell again -> Open Edit Modal
+        setSelectedShiftForMove(null);
+        setEditingCell({ staffId, dateStr, currentShift });
+        setIsShiftEditOpen(true);
+        return;
+      }
+
+      // Perform Move or Swap
+      setLoading(true);
+      try {
+        const sourceShift = shifts.find(s => s.staff_id === selectedShiftForMove.staffId && s.date === selectedShiftForMove.dateStr);
+        const targetShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
+
+        if (sourceShift && targetShift) {
+          // Swap: Update source to temp date, target to source, source to target
+          const tempDate = '2000-01-01';
+          await supabase.from('shifts').update({ date: tempDate }).eq('id', sourceShift.id);
+          await supabase.from('shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
+          await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
+        } else if (sourceShift && !targetShift) {
+          // Move
+          await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
+        }
+        
+        await fetchData(); // Refresh shifts
+      } catch (error) {
+        console.error("Error moving/swapping shift:", error);
+        alert("เกิดข้อผิดพลาดในการย้าย/สลับเวร");
+      } finally {
+        setLoading(false);
+        setSelectedShiftForMove(null);
+      }
+    } else {
+      if (currentShift) {
+        // Select for move/swap
+        setSelectedShiftForMove({ staffId, dateStr, shiftType: currentShift });
+      } else {
+        // Open edit modal to add new shift
+        setEditingCell({ staffId, dateStr, currentShift });
+        setIsShiftEditOpen(true);
+      }
+    }
   };
 
   const handleRequestShiftSwap = (staff: Staff, shift: Shift) => {
@@ -416,6 +462,28 @@ export default function App() {
               </div>
             </div>
 
+            {selectedShiftForMove && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <span className="text-indigo-600 font-bold text-xs">{selectedShiftForMove.shiftType}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-indigo-900">
+                      กำลังเลือกเวรของ <span className="font-bold">{staffList.find(s => s.id === selectedShiftForMove.staffId)?.name}</span> วันที่ {format(new Date(selectedShiftForMove.dateStr), 'dd/MM/yyyy')}
+                    </p>
+                    <p className="text-xs text-indigo-700">คลิกช่องอื่นเพื่อย้าย/สลับ หรือคลิกที่เดิมเพื่อแก้ไข</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedShiftForMove(null)}
+                  className="px-3 py-1.5 bg-white text-indigo-600 text-xs font-medium rounded-lg border border-indigo-200 hover:bg-indigo-50 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex flex-col justify-center items-center h-96 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
@@ -430,6 +498,7 @@ export default function App() {
                 user={user}
                 onCellClick={handleCellClick}
                 onShiftSwapRequest={handleRequestShiftSwap}
+                selectedShiftForMove={selectedShiftForMove}
               />
             )}
           </div>

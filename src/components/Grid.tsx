@@ -13,6 +13,7 @@ interface GridProps {
   user: User | null;
   onCellClick: (staffId: string, date: string, currentShift: ShiftType | undefined) => void;
   onShiftSwapRequest: (staff: Staff, shift: Shift) => void;
+  selectedShiftForMove?: { staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null;
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -29,7 +30,7 @@ const shiftLabels: Record<ShiftType, string> = {
   O: 'หยุด',
 };
 
-export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellClick, onShiftSwapRequest }: GridProps) {
+export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellClick, onShiftSwapRequest, selectedShiftForMove }: GridProps) {
   const daysInMonth = getDaysInMonth(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1);
@@ -110,6 +111,7 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellCli
                   const shiftType = getShiftForStaffAndDate(staff.id, dateStr);
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
+                  const isSelectedForMove = selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
 
                   return (
                     <td
@@ -125,16 +127,18 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellCli
                         }
                       }}
                       className={clsx(
-                        "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all",
+                        "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                         isAdmin && "hover:bg-slate-100/50",
                         isTdy && !shiftType && "bg-indigo-50/20",
-                        isWknd && !shiftType && "bg-rose-50/20"
+                        isWknd && !shiftType && "bg-rose-50/20",
+                        isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50"
                       )}
                     >
                       {shiftType ? (
                         <div className={clsx(
                           "w-full h-7 flex items-center justify-center rounded-md border text-[10px] font-bold transition-transform hover:scale-105 active:scale-95",
-                          shiftColors[shiftType]
+                          shiftColors[shiftType],
+                          isSelectedForMove && "ring-2 ring-indigo-500 ring-offset-1"
                         )}>
                           {shiftLabels[shiftType]}
                         </div>
