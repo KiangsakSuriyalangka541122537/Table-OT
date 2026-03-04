@@ -144,7 +144,8 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
 
           <div className="grid grid-cols-4 gap-4 text-[11px] mt-8">
             {/* Column 1 */}
-            <div className="flex flex-col items-center space-y-8">
+            <div className="flex flex-col items-center space-y-2">
+              <p className="mb-4 invisible">ช่องว่างเพื่อความสวยงาม</p>
               <div className="text-center">
                 <p className="mb-4">ลงชื่อ...........................................................</p>
                 <p>(นายกิตติพงษ์ ชัยศรี)</p>
