@@ -172,7 +172,7 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
               <p className="font-bold mb-10">ได้ตรวจสอบแล้วถูกต้องเห็นควรพิจารณา อนุมัติ</p>
               <div className="text-center">
                 <p className="mb-1">ลงชื่อ...........................................................</p>
-                <p>(นางสาว ทิวารินทร์ ทองจรูญ)</p>
+                <p>(นางสาวทิวารินทร์ ทองจรูญ)</p>
                 <p>นักวิชาการการเงินและบัญชี</p>
               </div>
             </div>

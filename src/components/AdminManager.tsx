@@ -35,10 +35,10 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
       
       const defaultStaff = [
         { name: 'นายกิตติพงษ์ ชัยศรี', username: 'tor', password: 'tor', role: 'staff' },
-        { name: 'นางสาว วรรณภา สอนเสือ', username: 'kik', password: 'kik', role: 'admin' },
+        { name: 'นางสาววรรณภา สอนเสือ', username: 'kik', password: 'kik', role: 'admin' },
         { name: 'นางสาวศิรินชา พึ่งวงษ์เขียน', username: 'jhim', password: 'jhim', role: 'staff' },
         { name: 'นางสาวนิธิพร ใสปา', username: 'parn', password: 'parn', role: 'staff' },
-        { name: 'นาย เกรียงศักดิ์ สุริยะลังกา', username: 'top', password: 'top', role: 'staff' },
+        { name: 'นายเกรียงศักดิ์ สุริยะลังกา', username: 'top', password: 'top', role: 'staff' },
         { name: 'นายวิทวัส หมายมั่น', username: 'team', password: 'team', role: 'staff' },
       ];
 

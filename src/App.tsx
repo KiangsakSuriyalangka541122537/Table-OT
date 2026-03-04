@@ -44,12 +44,19 @@ export default function App() {
   useEffect(() => {
     const cleanupDuplicates = async () => {
       try {
-        // 1. Migration: Update น.ส. to นางสาว
+        // 1. Migration: Update น.ส. to นางสาว and remove spaces after prefixes
         const { data: staffToUpdate } = await supabase.from('staff').select('id, name');
         if (staffToUpdate) {
           for (const s of staffToUpdate) {
-            if (s.name.includes('น.ส.')) {
-              const newName = s.name.replace(/น\.ส\./g, 'นางสาว');
+            let newName = s.name;
+            // Replace น.ส. with นางสาว
+            if (newName.includes('น.ส.')) {
+              newName = newName.replace(/น\.ส\./g, 'นางสาว');
+            }
+            // Remove spaces after prefixes (นาย, นางสาว, นาง)
+            newName = newName.replace(/^(นาย|นางสาว|นาง)\s+/g, '$1');
+            
+            if (newName !== s.name) {
               await supabase.from('staff').update({ name: newName }).eq('id', s.id);
               // Also update users table if exists
               await supabase.from('users').update({ name: newName }).eq('name', s.name);
