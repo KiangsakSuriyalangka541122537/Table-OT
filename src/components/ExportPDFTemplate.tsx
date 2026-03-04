@@ -74,9 +74,10 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
             font-family: 'Sarabun', sans-serif;
           }
           .pdf-page * { font-family: 'Sarabun', sans-serif; }
-          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; margin-bottom: 4px; table-layout: fixed; }
-          .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 2px; font-weight: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-          .pdf-table th { padding: 4px 2px; font-weight: bold; }
+          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 10px; margin-bottom: 4px; table-layout: fixed; }
+          .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 1px; font-weight: normal; overflow: hidden; }
+          .pdf-table th { padding: 2px 1px; font-weight: bold; }
+          .pdf-day-col { width: 18px; font-size: 8px; padding: 0 !important; }
           .pdf-bg-gray { background-color: #d1d5db !important; }
           .pdf-text-red { color: #000000 !important; }
         `}</style>
@@ -93,18 +94,18 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
           <table className="pdf-table">
             <thead>
               <tr>
-                <th className="w-8" rowSpan={2}>ลำดับ<br/>ที่</th>
-                <th className="w-40" rowSpan={2}>ชื่อ -สกุล</th>
-                <th className="w-32" rowSpan={2}>ตำแหน่ง</th>
-                <th className="w-12" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
+                <th className="w-6" rowSpan={2}>ลำดับ<br/>ที่</th>
+                <th className="w-36" rowSpan={2}>ชื่อ -สกุล</th>
+                <th className="w-28" rowSpan={2}>ตำแหน่ง</th>
+                <th className="w-10" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
                 <th colSpan={31}>วันที่ขึ้นปฏิบัติงาน</th>
-                <th className="w-12" rowSpan={2}>จำนวน<br/>เวร</th>
-                <th className="w-16" rowSpan={2}>จำนวนเงิน</th>
-                <th className="w-24" rowSpan={2}>ลายมือชื่อ</th>
+                <th className="w-10" rowSpan={2}>จำนวน<br/>เวร</th>
+                <th className="w-14" rowSpan={2}>จำนวนเงิน</th>
+                <th className="w-20" rowSpan={2}>ลายมือชื่อ</th>
               </tr>
               <tr>
                 {days.map((day) => (
-                  <th key={day} className="w-5 p-0 text-[9px]">{day}</th>
+                  <th key={day} className="pdf-day-col">{day}</th>
                 ))}
               </tr>
             </thead>
@@ -112,13 +113,13 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
               {rows.map((row, i) => (
                 <tr key={i}>
                   <td>{row.no}</td>
-                  <td className="text-left px-2">{row.name}</td>
-                  <td className="text-left px-2">{row.position}</td>
+                  <td className="text-left px-1">{row.name}</td>
+                  <td className="text-left px-1">{row.position}</td>
                   <td>{row.rate}</td>
                   {days.map((day, idx) => {
                     const isWeekendDay = day <= daysInMonth && isWeekend(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
                     return (
-                      <td key={idx} className={isWeekendDay ? 'pdf-bg-gray' : ''}>
+                      <td key={idx} className={`${isWeekendDay ? 'pdf-bg-gray' : ''} pdf-day-col`}>
                         {row.shifts[idx]}
                       </td>
                     );
