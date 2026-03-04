@@ -145,9 +145,9 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
           <div className="grid grid-cols-4 gap-4 text-[11px] mt-8">
             {/* Column 1 */}
             <div className="flex flex-col items-center space-y-2">
-              <p className="mb-4 invisible">ช่องว่างเพื่อความสวยงาม</p>
+              <p className="mb-10 invisible">ช่องว่างเพื่อความสวยงาม</p>
               <div className="text-center">
-                <p className="mb-4">ลงชื่อ...........................................................</p>
+                <p className="mb-1">ลงชื่อ...........................................................</p>
                 <p>(นายกิตติพงษ์ ชัยศรี)</p>
                 <p>นักวิชาการคอมพิวเตอร์ชำนาญการ</p>
                 <p>หัวหน้ากลุ่มงานเทคโนโลยีสารสนเทศ</p>
@@ -156,9 +156,9 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
 
             {/* Column 2 */}
             <div className="flex flex-col items-center space-y-2">
-              <p className="font-bold mb-4">ตรวจสอบแล้วถูกต้องเห็นควรอนุมัติ</p>
+              <p className="font-bold mb-10">ตรวจสอบแล้วถูกต้องเห็นควรอนุมัติ</p>
               <div className="text-center">
-                <p className="mb-4">ลงชื่อ...........................................................</p>
+                <p className="mb-1">ลงชื่อ...........................................................</p>
                 <p>(นายสมิทธ์ เกิดสินธุ์)</p>
                 <p>นายแพทย์เชี่ยวชาญ</p>
                 <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
@@ -167,9 +167,9 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
 
             {/* Column 3 */}
             <div className="flex flex-col items-center space-y-2">
-              <p className="font-bold mb-4">ได้ตรวจสอบแล้วถูกต้องเห็นควรพิจารณา อนุมัติ</p>
+              <p className="font-bold mb-10">ได้ตรวจสอบแล้วถูกต้องเห็นควรพิจารณา อนุมัติ</p>
               <div className="text-center">
-                <p className="mb-4">ลงชื่อ...........................................................</p>
+                <p className="mb-1">ลงชื่อ...........................................................</p>
                 <p>(นางสาว ทิวารินทร์ ทองจรูญ)</p>
                 <p>นักวิชาการการเงินและบัญชี</p>
               </div>
@@ -177,9 +177,9 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
 
             {/* Column 4 */}
             <div className="flex flex-col items-center space-y-2">
-              <p className="font-bold mb-4">คำสั่งผู้อำนวยการอนุมัติ</p>
+              <p className="font-bold mb-10">คำสั่งผู้อำนวยการอนุมัติ</p>
               <div className="text-center">
-                <p className="mb-4">ลงชื่อ...........................................................</p>
+                <p className="mb-1">ลงชื่อ...........................................................</p>
                 <p>(นายมงคล ลือชูวงศ์)</p>
                 <p>ผู้อำนวยการโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</p>
               </div>
