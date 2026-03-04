@@ -33,6 +33,7 @@ export default function App() {
   const [shiftToSwap, setShiftToSwap] = useState<Shift | null>(null);
   const [targetShiftToSwap, setTargetShiftToSwap] = useState<Shift | null>(null);
   const [requesterStaff, setRequesterStaff] = useState<Staff | null>(null);
+  const [swapSelection, setSwapSelection] = useState<{ staff: Staff; shift: Shift } | null>(null);
   
   // Shift Edit Modal state
   const [isShiftEditOpen, setIsShiftEditOpen] = useState(false);
@@ -160,18 +161,44 @@ export default function App() {
       return;
     }
 
-    if (staff.id === currentUserStaff.id) {
-      // Clicking own shift -> requester
-      setRequesterStaff(currentUserStaff);
-      setShiftToSwap(shift);
-      setTargetShiftToSwap(null);
-    } else {
-      // Clicking someone else's shift -> target
-      setRequesterStaff(currentUserStaff);
-      setShiftToSwap(null);
-      setTargetShiftToSwap(shift);
+    if (!swapSelection) {
+      // First click: select this shift
+      setSwapSelection({ staff, shift });
+      return;
     }
+
+    // Second click: we have two shifts now
+    const first = swapSelection;
+    const second = { staff, shift };
+
+    // Check if at least one shift belongs to the logged-in user
+    const firstIsMine = first.staff.id === currentUserStaff.id;
+    const secondIsMine = second.staff.id === currentUserStaff.id;
+
+    if (!firstIsMine && !secondIsMine) {
+      // Neither shift belongs to the user, start a new selection with the second click
+      setSwapSelection(second);
+      return;
+    }
+
+    // Determine requester shift (mine) and target shift (theirs)
+    if (firstIsMine && secondIsMine) {
+      // Both are mine, let's just make the first one requester and second one target (self-swap)
+      setRequesterStaff(currentUserStaff);
+      setShiftToSwap(first.shift);
+      setTargetShiftToSwap(second.shift);
+    } else if (firstIsMine) {
+      setRequesterStaff(currentUserStaff);
+      setShiftToSwap(first.shift);
+      setTargetShiftToSwap(second.shift);
+    } else {
+      setRequesterStaff(currentUserStaff);
+      setShiftToSwap(second.shift);
+      setTargetShiftToSwap(first.shift);
+    }
+
     setIsShiftSwapRequestModalOpen(true);
+    setSwapSelection(null); // Reset selection after opening modal
   };
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
@@ -428,6 +455,8 @@ export default function App() {
                 shifts={shifts}
                 isAdmin={isAdmin}
                 user={user}
+                swapSelection={swapSelection}
+                onCancelSwap={() => setSwapSelection(null)}
                 onCellClick={handleCellClick}
                 onShiftSwapRequest={handleRequestShiftSwap}
               />
