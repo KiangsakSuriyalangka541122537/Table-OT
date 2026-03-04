@@ -131,7 +131,7 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
                 <td colSpan={35} className="text-left font-bold px-2 text-[10px]">หมายเหตุ : เวรบ่ายและดึก รวมกัน 750 บาท</td>
                 <td className="font-bold">{grandTotalShifts}</td>
                 <td className="font-bold">{grandTotalPay}</td>
-                <td></td>
+                <td style={{ border: 'none' }}></td>
               </tr>
             </tbody>
           </table>
