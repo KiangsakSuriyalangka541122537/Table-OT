@@ -1,7 +1,7 @@
 import React from 'react';
 import { format, getDaysInMonth, isWeekend, isToday } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { User as UserIcon, X, Info } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
 import { Staff, Shift, ShiftType, User } from '../types';
 import clsx from 'clsx';
 
@@ -11,8 +11,6 @@ interface GridProps {
   shifts: Shift[];
   isAdmin: boolean;
   user: User | null;
-  swapSelection: { staff: Staff; shift: Shift } | null;
-  onCancelSwap: () => void;
   onCellClick: (staffId: string, date: string, currentShift: ShiftType | undefined) => void;
   onShiftSwapRequest: (staff: Staff, shift: Shift) => void;
 }
@@ -31,17 +29,7 @@ const shiftLabels: Record<ShiftType, string> = {
   O: 'หยุด',
 };
 
-export function Grid({ 
-  currentMonth, 
-  staffList, 
-  shifts, 
-  isAdmin, 
-  user, 
-  swapSelection,
-  onCancelSwap,
-  onCellClick, 
-  onShiftSwapRequest 
-}: GridProps) {
+export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellClick, onShiftSwapRequest }: GridProps) {
   const daysInMonth = getDaysInMonth(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1);
@@ -54,35 +42,7 @@ export function Grid({
   };
 
   return (
-    <div className="space-y-4">
-      {swapSelection && (
-        <div className="bg-indigo-600 text-white px-6 py-3 rounded-2xl flex items-center justify-between shadow-lg shadow-indigo-200 animate-in slide-in-from-top duration-300">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-xl">
-              <Info className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm font-bold">กำลังเลือกเวรเพื่อสลับ</p>
-              <p className="text-[10px] opacity-80">
-                เลือกแล้ว: {swapSelection.staff.name} - {format(new Date(swapSelection.shift.date), 'd MMM')} ({shiftLabels[swapSelection.shift.shift_type]})
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-medium bg-white/20 px-3 py-1 rounded-full animate-pulse">
-              คลิกอีกหนึ่งช่องที่ต้องการสลับด้วย
-            </span>
-            <button 
-              onClick={onCancelSwap}
-              className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
-      
-      <div className="overflow-x-auto bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-200">
+    <div className="overflow-x-auto bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-200">
       <table className="w-full table-fixed divide-y divide-slate-200" id="roster-table">
         <thead className="bg-slate-50 sticky top-0 z-10">
           <tr>
@@ -150,14 +110,13 @@ export function Grid({
                   const shiftType = getShiftForStaffAndDate(staff.id, dateStr);
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
-                  const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
-                  const isSelected = swapSelection?.shift.id === shiftObj?.id;
 
                   return (
                     <td
                       key={dateStr}
                       onClick={() => {
                         const staffObj = staffList.find(s => s.id === staff.id);
+                        const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
                         if (isAdmin) {
                           onCellClick(staff.id, dateStr, shiftType);
                         } else if (user && staffObj && shiftObj) {
@@ -166,17 +125,16 @@ export function Grid({
                         }
                       }}
                       className={clsx(
-                        "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
+                        "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all",
                         isAdmin && "hover:bg-slate-100/50",
                         isTdy && !shiftType && "bg-indigo-50/20",
-                        isWknd && !shiftType && "bg-rose-50/20",
-                        isSelected && "bg-indigo-100/50 ring-2 ring-inset ring-indigo-500 z-10"
+                        isWknd && !shiftType && "bg-rose-50/20"
                       )}
                     >
                       {shiftType ? (
                         <div className={clsx(
                           "w-full h-7 flex items-center justify-center rounded-md border text-[10px] font-bold transition-transform hover:scale-105 active:scale-95",
-                          isSelected ? "bg-indigo-600 text-white border-indigo-700 shadow-md" : shiftColors[shiftType]
+                          shiftColors[shiftType]
                         )}>
                           {shiftLabels[shiftType]}
                         </div>
@@ -239,6 +197,5 @@ export function Grid({
         </tbody>
       </table>
     </div>
-  </div>
-);
+  );
 }
