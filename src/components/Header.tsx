@@ -41,7 +41,7 @@ export function Header({
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-indigo-200 shadow-lg">
               <BarChart2 className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-lg font-semibold text-slate-900 hidden sm:block tracking-tight">ระบบจัดการตารางเวร</h1>
+            <h1 className="text-lg font-semibold text-slate-900 hidden sm:block tracking-tight">โปรแกรมจัดการตารางเวร</h1>
             <h1 className="text-lg font-semibold text-slate-900 sm:hidden">ตารางเวร</h1>
           </div>
 
