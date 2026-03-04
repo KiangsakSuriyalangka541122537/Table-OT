@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { X, Calendar, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../types';
 import { format } from 'date-fns';
 import clsx from 'clsx';
@@ -8,8 +8,9 @@ interface ShiftSwapRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSendRequest: (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => void;
-  currentStaff: Staff | null; // The staff initiating the request
-  currentShift: Shift | null; // The shift the currentStaff wants to swap out of
+  currentStaff: Staff | null; // The logged-in staff
+  initialRequesterShift: Shift | null; // Optional: The shift the user clicked (if it's theirs)
+  initialTargetShift: Shift | null; // Optional: The shift the user clicked (if it's someone else's)
   allStaff: Staff[];
   allShifts: Shift[];
 }
@@ -30,10 +31,12 @@ export function ShiftSwapRequestModal({
   onClose,
   onSendRequest,
   currentStaff,
-  currentShift,
+  initialRequesterShift,
+  initialTargetShift,
   allStaff,
   allShifts,
 }: ShiftSwapRequestModalProps) {
+  const [requesterShiftId, setRequesterShiftId] = useState<string>('');
   const [targetStaffId, setTargetStaffId] = useState<string>('');
   const [targetShiftId, setTargetShiftId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -41,30 +44,31 @@ export function ShiftSwapRequestModal({
 
   useEffect(() => {
     if (isOpen) {
-      setTargetStaffId('');
-      setTargetShiftId('');
+      setRequesterShiftId(initialRequesterShift?.id || '');
+      setTargetStaffId(initialTargetShift?.staff_id || '');
+      setTargetShiftId(initialTargetShift?.id || '');
       setError(null);
       setLoading(false);
     }
-  }, [isOpen]);
+  }, [isOpen, initialRequesterShift, initialTargetShift]);
 
-  if (!isOpen || !currentStaff || !currentShift) return null;
+  if (!isOpen || !currentStaff) return null;
 
-  const availableTargetShifts = allShifts.filter(shift => 
-    shift.staff_id !== currentStaff.id && // Cannot swap with own shift
-    shift.date === currentShift.date // Must be on the same day
-  );
+  // Shifts belonging to the logged-in user that they can give away
+  const myShifts = allShifts.filter(s => s.staff_id === currentStaff.id);
 
   const handleSendRequest = async () => {
     setError(null);
-    if (!targetStaffId || !targetShiftId) {
-      setError('กรุณาเลือกพนักงานและกะที่ต้องการสลับด้วย');
+    if (!requesterShiftId || !targetStaffId || !targetShiftId) {
+      setError('กรุณาเลือกกะของคุณและกะที่ต้องการสลับด้วย');
       return;
     }
 
+    const requesterShift = allShifts.find(s => s.id === requesterShiftId);
     const targetShift = allShifts.find(s => s.id === targetShiftId);
-    if (!targetShift) {
-      setError('ไม่พบกะเป้าหมาย');
+
+    if (!requesterShift || !targetShift) {
+      setError('ไม่พบข้อมูลกะที่เลือก');
       return;
     }
 
@@ -72,9 +76,9 @@ export function ShiftSwapRequestModal({
     try {
       await onSendRequest({
         requester_staff_id: currentStaff.id,
-        requester_shift_id: currentShift.id,
-        requester_date: currentShift.date,
-        requester_shift_type: currentShift.shift_type,
+        requester_shift_id: requesterShift.id,
+        requester_date: requesterShift.date,
+        requester_shift_type: requesterShift.shift_type,
         target_staff_id: targetStaffId,
         target_shift_id: targetShift.id,
         target_date: targetShift.date,
@@ -89,6 +93,7 @@ export function ShiftSwapRequestModal({
     }
   };
 
+  const selectedRequesterShift = allShifts.find(s => s.id === requesterShiftId);
   const selectedTargetShift = allShifts.find(s => s.id === targetShiftId);
   const selectedTargetStaff = allStaff.find(s => s.id === targetStaffId);
 
@@ -114,23 +119,22 @@ export function ShiftSwapRequestModal({
         )}
 
         <div className="space-y-4 mb-6">
-          {/* Your Shift */}
-          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">กะของคุณ</h3>
-            <div className="flex items-center text-gray-700 text-sm mb-1">
-              <UserIcon className="w-4 h-4 mr-2 text-gray-500" />
-              <span>{currentStaff.name}</span>
-            </div>
-            <div className="flex items-center text-gray-700 text-sm mb-1">
-              <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-              <span>{format(new Date(currentShift.date), 'dd MMMM yyyy')}</span>
-            </div>
-            <div className="flex items-center text-gray-700 text-sm">
-              <Clock className="w-4 h-4 mr-2 text-gray-500" />
-              <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium", shiftColors[currentShift.shift_type])}>
-                {shiftLabels[currentShift.shift_type]} ({currentShift.shift_type})
-              </span>
-            </div>
+          {/* Requester Shift Selection */}
+          <div>
+            <label htmlFor="requesterShift" className="block text-sm font-medium text-gray-700 mb-2">กะของคุณที่ต้องการสลับออก</label>
+            <select
+              id="requesterShift"
+              value={requesterShiftId}
+              onChange={(e) => setRequesterShiftId(e.target.value)}
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            >
+              <option value="">-- เลือกกะของคุณ --</option>
+              {myShifts.map(shift => (
+                <option key={shift.id} value={shift.id}>
+                  {shiftLabels[shift.shift_type]} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Target Staff Selection */}
@@ -141,7 +145,7 @@ export function ShiftSwapRequestModal({
               value={targetStaffId}
               onChange={(e) => {
                 setTargetStaffId(e.target.value);
-                setTargetShiftId(''); // Reset target shift when staff changes
+                setTargetShiftId(''); 
               }}
               className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
             >
@@ -152,18 +156,18 @@ export function ShiftSwapRequestModal({
             </select>
           </div>
 
-          {/* Target Shift Selection (filtered by selected staff) */}
+          {/* Target Shift Selection */}
           {targetStaffId && (
             <div>
-              <label htmlFor="targetShift" className="block text-sm font-medium text-gray-700 mb-2">เลือกกะที่ต้องการสลับ</label>
+              <label htmlFor="targetShift" className="block text-sm font-medium text-gray-700 mb-2">เลือกกะของเขาที่ต้องการ</label>
               <select
                 id="targetShift"
                 value={targetShiftId}
                 onChange={(e) => setTargetShiftId(e.target.value)}
                 className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               >
-                <option value="">-- เลือกกะ --</option>
-                {availableTargetShifts
+                <option value="">-- เลือกกะเป้าหมาย --</option>
+                {allShifts
                   .filter(shift => shift.staff_id === targetStaffId)
                   .map(shift => (
                     <option key={shift.id} value={shift.id}>
@@ -174,27 +178,29 @@ export function ShiftSwapRequestModal({
             </div>
           )}
 
-          {/* Summary of Target Shift */}
-          {selectedTargetShift && selectedTargetStaff && (
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">กะที่ต้องการสลับด้วย</h3>
-              <div className="flex items-center text-gray-700 text-sm mb-1">
-                <UserIcon className="w-4 h-4 mr-2 text-gray-500" />
-                <span>{selectedTargetStaff.name}</span>
+          {/* Summary */}
+          {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
+            <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100 space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-indigo-600">
+                <span>สรุปการสลับเวร</span>
               </div>
-              <div className="flex items-center text-gray-700 text-sm mb-1">
-                <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                <span>{format(new Date(selectedTargetShift.date), 'dd MMMM yyyy')}</span>
-              </div>
-              <div className="flex items-center text-gray-700 text-sm">
-                <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium", shiftColors[selectedTargetShift.shift_type])}>
-                  {shiftLabels[selectedTargetShift.shift_type]} ({selectedTargetShift.shift_type})
-                </span>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-gray-500 uppercase mb-1">กะของคุณ</p>
+                  <p className="font-bold text-gray-900">{shiftLabels[selectedRequesterShift.shift_type]}</p>
+                  <p className="text-[10px] text-gray-500">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
+                </div>
+                <div className="flex-shrink-0">
+                  <RefreshCw className="w-4 h-4 text-indigo-400" />
+                </div>
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-gray-500 uppercase mb-1">กะของ {selectedTargetStaff.name.split(' ')[0]}</p>
+                  <p className="font-bold text-gray-900">{shiftLabels[selectedTargetShift.shift_type]}</p>
+                  <p className="text-[10px] text-gray-500">{format(new Date(selectedTargetShift.date), 'dd/MM')}</p>
+                </div>
               </div>
             </div>
           )}
-
         </div>
 
         <div className="flex justify-end space-x-3">
@@ -206,7 +212,7 @@ export function ShiftSwapRequestModal({
           </button>
           <button
             onClick={handleSendRequest}
-            disabled={loading || !targetStaffId || !targetShiftId}
+            disabled={loading || !requesterShiftId || !targetStaffId || !targetShiftId}
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'กำลังส่งคำขอ...' : 'ส่งคำขอสลับเวร'}

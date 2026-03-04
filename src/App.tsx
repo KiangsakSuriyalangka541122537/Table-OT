@@ -31,6 +31,7 @@ export default function App() {
   // Shift Swap Request Modal state
   const [isShiftSwapRequestModalOpen, setIsShiftSwapRequestModalOpen] = useState(false);
   const [shiftToSwap, setShiftToSwap] = useState<Shift | null>(null);
+  const [targetShiftToSwap, setTargetShiftToSwap] = useState<Shift | null>(null);
   const [requesterStaff, setRequesterStaff] = useState<Staff | null>(null);
   
   // Shift Edit Modal state
@@ -152,8 +153,24 @@ export default function App() {
 
   const handleRequestShiftSwap = (staff: Staff, shift: Shift) => {
     if (isAdmin) return; // Admins use edit modal
-    setRequesterStaff(staff);
-    setShiftToSwap(shift);
+    
+    const currentUserStaff = staffList.find(s => s.name === user?.name);
+    if (!currentUserStaff) {
+      alert('ไม่พบข้อมูลพนักงานของคุณในระบบ กรุณาติดต่อผู้ดูแลระบบ');
+      return;
+    }
+
+    if (staff.id === currentUserStaff.id) {
+      // Clicking own shift -> requester
+      setRequesterStaff(currentUserStaff);
+      setShiftToSwap(shift);
+      setTargetShiftToSwap(null);
+    } else {
+      // Clicking someone else's shift -> target
+      setRequesterStaff(currentUserStaff);
+      setShiftToSwap(null);
+      setTargetShiftToSwap(shift);
+    }
     setIsShiftSwapRequestModalOpen(true);
   };
 
@@ -455,7 +472,8 @@ export default function App() {
         onClose={() => setIsShiftSwapRequestModalOpen(false)}
         onSendRequest={handleSendSwapRequest}
         currentStaff={requesterStaff}
-        currentShift={shiftToSwap}
+        initialRequesterShift={shiftToSwap}
+        initialTargetShift={targetShiftToSwap}
         allStaff={staffList}
         allShifts={shifts}
       />

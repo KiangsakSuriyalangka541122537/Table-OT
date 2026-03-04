@@ -119,7 +119,8 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellCli
                         const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
                         if (isAdmin) {
                           onCellClick(staff.id, dateStr, shiftType);
-                        } else if (user && staffObj && shiftObj && user.id === staffObj.id) {
+                        } else if (user && staffObj && shiftObj) {
+                          // Allow swap if logged in and clicking a valid shift
                           onShiftSwapRequest(staffObj, shiftObj);
                         }
                       }}
