@@ -118,7 +118,7 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
                     const isWeekendDay = day <= daysInMonth && isWeekend(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
                     return (
                       <td key={idx} className={isWeekendDay ? 'pdf-bg-gray' : ''}>
-                        {/* Empty cells for payment evidence as per image */}
+                        {row.shifts[idx]}
                       </td>
                     );
                   })}
