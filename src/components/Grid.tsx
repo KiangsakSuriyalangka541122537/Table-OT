@@ -72,70 +72,123 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellCli
                 </th>
               );
             })}
+            <th scope="col" className="px-4 py-4 text-center text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50/30 border-l border-slate-200 min-w-[80px]">
+              รวมเวร
+            </th>
+            <th scope="col" className="px-4 py-4 text-center text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50/30 border-l border-slate-200 min-w-[100px]">
+              รวมเงิน (฿)
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-slate-100">
-          {staffList.map((staff) => (
-            <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors group">
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-700 sticky left-0 bg-white z-10 border-r border-slate-200 group-hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center border transition-all ${
-                    staff.name.startsWith('นาย') 
-                      ? 'bg-blue-50 text-blue-600 border-blue-100 group-hover:bg-blue-100' 
-                      : staff.name.startsWith('น.ส.') || staff.name.startsWith('นางสาว') || staff.name.startsWith('นาง')
-                        ? 'bg-pink-50 text-pink-600 border-pink-100 group-hover:bg-pink-100'
-                        : 'bg-slate-100 text-slate-500 border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100'
-                  }`}>
-                    <UserIcon className="w-5 h-5" />
-                  </div>
-                  <span className="tracking-tight">{staff.name}</span>
-                </div>
-              </td>
-              {days.map((day) => {
-                const dateStr = format(day, 'yyyy-MM-dd');
-                const shiftType = getShiftForStaffAndDate(staff.id, dateStr);
-                const isTdy = isToday(day);
-                const isWknd = isWeekend(day);
+          {staffList.map((staff) => {
+            const staffShifts = shifts.filter(s => s.staff_id === staff.id);
+            const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
+            const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
+            const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
+            const totalShifts = mCount + ((aCount + nCount) / 2);
+            const totalPay = totalShifts * 750;
 
-                return (
-                  <td
-                    key={dateStr}
-                    onClick={() => {
-                      const staffObj = staffList.find(s => s.id === staff.id);
-                      const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
-                      if (isAdmin) {
-                        onCellClick(staff.id, dateStr, shiftType);
-                      } else if (user && staffObj && shiftObj && user.id === staffObj.id) {
-                        onShiftSwapRequest(staffObj, shiftObj);
-                      }
-                    }}
-                    className={clsx(
-                      "px-1.5 py-3 whitespace-nowrap text-center text-sm border-r border-slate-100 cursor-pointer transition-all",
-                      isAdmin && "hover:bg-slate-100/50",
-                      isTdy && !shiftType && "bg-indigo-50/20",
-                      isWknd && !shiftType && "bg-rose-50/20"
-                    )}
-                  >
-                    {shiftType ? (
-                      <div className={clsx(
-                        "w-full h-8 flex items-center justify-center rounded-lg border text-xs font-bold transition-transform hover:scale-105 active:scale-95",
-                        shiftColors[shiftType]
-                      )}>
-                        {shiftLabels[shiftType]}
-                      </div>
-                    ) : (
-                      <div className="w-full h-8 flex items-center justify-center text-slate-200 hover:text-slate-300 transition-colors">
-                        <div className="w-1 h-1 rounded-full bg-current"></div>
-                      </div>
-                    )}
-                  </td>
-                );
-              })}
+            return (
+              <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors group">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-700 sticky left-0 bg-white z-10 border-r border-slate-200 group-hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center border transition-all ${
+                      staff.name.startsWith('นาย') 
+                        ? 'bg-blue-50 text-blue-600 border-blue-100 group-hover:bg-blue-100' 
+                        : staff.name.startsWith('น.ส.') || staff.name.startsWith('นางสาว') || staff.name.startsWith('นาง')
+                          ? 'bg-pink-50 text-pink-600 border-pink-100 group-hover:bg-pink-100'
+                          : 'bg-slate-100 text-slate-500 border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100'
+                    }`}>
+                      <UserIcon className="w-5 h-5" />
+                    </div>
+                    <span className="tracking-tight">{staff.name}</span>
+                  </div>
+                </td>
+                {days.map((day) => {
+                  const dateStr = format(day, 'yyyy-MM-dd');
+                  const shiftType = getShiftForStaffAndDate(staff.id, dateStr);
+                  const isTdy = isToday(day);
+                  const isWknd = isWeekend(day);
+
+                  return (
+                    <td
+                      key={dateStr}
+                      onClick={() => {
+                        const staffObj = staffList.find(s => s.id === staff.id);
+                        const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
+                        if (isAdmin) {
+                          onCellClick(staff.id, dateStr, shiftType);
+                        } else if (user && staffObj && shiftObj && user.id === staffObj.id) {
+                          onShiftSwapRequest(staffObj, shiftObj);
+                        }
+                      }}
+                      className={clsx(
+                        "px-1.5 py-3 whitespace-nowrap text-center text-sm border-r border-slate-100 cursor-pointer transition-all",
+                        isAdmin && "hover:bg-slate-100/50",
+                        isTdy && !shiftType && "bg-indigo-50/20",
+                        isWknd && !shiftType && "bg-rose-50/20"
+                      )}
+                    >
+                      {shiftType ? (
+                        <div className={clsx(
+                          "w-full h-8 flex items-center justify-center rounded-lg border text-xs font-bold transition-transform hover:scale-105 active:scale-95",
+                          shiftColors[shiftType]
+                        )}>
+                          {shiftLabels[shiftType]}
+                        </div>
+                      ) : (
+                        <div className="w-full h-8 flex items-center justify-center text-slate-200 hover:text-slate-300 transition-colors">
+                          <div className="w-1 h-1 rounded-full bg-current"></div>
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+                <td className="px-4 py-4 whitespace-nowrap text-center bg-indigo-50/10 border-l border-slate-100">
+                  <span className="text-sm font-bold text-indigo-600">{totalShifts}</span>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-center bg-emerald-50/10 border-l border-slate-100">
+                  <span className="text-sm font-bold text-emerald-600">{totalPay.toLocaleString()}</span>
+                </td>
+              </tr>
+            );
+          })}
+          {staffList.length > 0 && (
+            <tr className="bg-slate-50/80 font-bold">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 sticky left-0 bg-slate-50 z-10 border-r border-slate-200">
+                รวมทั้งหมด
+              </td>
+              {days.map((day) => (
+                <td key={day.toISOString()} className="px-1.5 py-3 border-r border-slate-100"></td>
+              ))}
+              <td className="px-4 py-4 whitespace-nowrap text-center bg-indigo-100/30 border-l border-slate-200">
+                <span className="text-sm font-black text-indigo-700">
+                  {staffList.reduce((acc, staff) => {
+                    const staffShifts = shifts.filter(s => s.staff_id === staff.id);
+                    const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
+                    const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
+                    const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
+                    return acc + mCount + ((aCount + nCount) / 2);
+                  }, 0)}
+                </span>
+              </td>
+              <td className="px-4 py-4 whitespace-nowrap text-center bg-emerald-100/30 border-l border-slate-200">
+                <span className="text-sm font-black text-emerald-700">
+                  ฿{staffList.reduce((acc, staff) => {
+                    const staffShifts = shifts.filter(s => s.staff_id === staff.id);
+                    const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
+                    const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
+                    const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
+                    return acc + (mCount + ((aCount + nCount) / 2)) * 750;
+                  }, 0).toLocaleString()}
+                </span>
+              </td>
             </tr>
-          ))}
+          )}
           {staffList.length === 0 && (
             <tr>
-              <td colSpan={daysInMonth + 1} className="px-6 py-12 text-center text-slate-400 italic">
+              <td colSpan={daysInMonth + 3} className="px-6 py-12 text-center text-slate-400 italic">
                 ไม่พบพนักงานในระบบ
               </td>
             </tr>
