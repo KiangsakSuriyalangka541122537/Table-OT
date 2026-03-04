@@ -12,7 +12,7 @@ interface GridProps {
   isAdmin: boolean;
   user: User | null;
   onCellClick: (staffId: string, date: string, currentShift: ShiftType | undefined) => void;
-  onShiftSwapRequest: (staff: Staff, shift: Shift) => void;
+  onShiftSwapRequest: (staff: Staff, dateStr: string, shift: Shift | null) => void;
   selectedShiftForMove?: { staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null;
   shiftToSwap?: Shift | null;
   targetShiftToSwap?: Shift | null;
@@ -133,12 +133,12 @@ export function Grid({
                       key={dateStr}
                       onClick={() => {
                         const staffObj = staffList.find(s => s.id === staff.id);
-                        const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
+                        const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
                         if (isAdmin) {
                           onCellClick(staff.id, dateStr, shiftType);
-                        } else if (user && staffObj && shiftObj) {
-                          // Allow swap if logged in and clicking a valid shift
-                          onShiftSwapRequest(staffObj, shiftObj);
+                        } else if (user && staffObj) {
+                          // Allow swap/move request if logged in
+                          onShiftSwapRequest(staffObj, dateStr, shiftObj);
                         }
                       }}
                       className={clsx(

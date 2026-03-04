@@ -36,11 +36,11 @@ export enum ShiftSwapStatus {
 export interface ShiftSwapRequest {
   id: string;
   requester_staff_id: string;
-  requester_shift_id: string;
+  requester_shift_id: string | null;
   requester_date: string;
   requester_shift_type: ShiftType;
   target_staff_id: string;
-  target_shift_id: string;
+  target_shift_id: string | null;
   target_date: string;
   target_shift_type: ShiftType;
   status: ShiftSwapStatus;

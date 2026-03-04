@@ -198,7 +198,7 @@ export default function App() {
     }
   };
 
-  const handleRequestShiftSwap = (staff: Staff, shift: Shift) => {
+  const handleRequestShiftSwap = (staff: Staff, dateStr: string, shift: Shift | null) => {
     if (isAdmin) return; // Admins use edit modal
     
     const currentUserStaff = staffList.find(s => s.name === user?.name);
@@ -210,18 +210,40 @@ export default function App() {
     setRequesterStaff(currentUserStaff);
 
     if (staff.id === currentUserStaff.id) {
-      // Clicking own shift
+      // Clicking own row
+      if (!shift) {
+        // Clicking empty cell in own row -> can't be a source for swap
+        return;
+      }
       if (shiftToSwap?.id === shift.id) {
         setShiftToSwap(null);
       } else {
         setShiftToSwap(shift);
       }
     } else {
-      // Clicking someone else's shift
-      if (targetShiftToSwap?.id === shift.id) {
-        setTargetShiftToSwap(null);
+      // Clicking someone else's row
+      if (shift) {
+        // Clicking an existing shift
+        if (targetShiftToSwap?.id === shift.id) {
+          setTargetShiftToSwap(null);
+        } else {
+          setTargetShiftToSwap(shift);
+        }
       } else {
-        setTargetShiftToSwap(shift);
+        // Clicking an empty cell -> Create a "virtual" shift object for the target
+        // This allows requesting to move to an empty slot
+        const virtualShift: Shift = {
+          id: `empty-${staff.id}-${dateStr}`,
+          staff_id: staff.id,
+          date: dateStr,
+          shift_type: 'O' // Use 'O' (Off) or some indicator for empty
+        };
+        
+        if (targetShiftToSwap?.id === virtualShift.id) {
+          setTargetShiftToSwap(null);
+        } else {
+          setTargetShiftToSwap(virtualShift);
+        }
       }
     }
   };
@@ -511,7 +533,10 @@ export default function App() {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase text-emerald-600">กะที่ต้องการ:</span>
                       {targetShiftToSwap ? (
-                        <span className="text-sm font-bold text-emerald-900">{staffList.find(s => s.id === targetShiftToSwap.staff_id)?.name.split(' ')[0]} - {format(new Date(targetShiftToSwap.date), 'dd/MM')} ({targetShiftToSwap.shift_type})</span>
+                        <span className="text-sm font-bold text-emerald-900">
+                          {staffList.find(s => s.id === targetShiftToSwap.staff_id)?.name.split(' ')[0]} - {format(new Date(targetShiftToSwap.date), 'dd/MM')} 
+                          {targetShiftToSwap.id.startsWith('empty-') ? ' (ช่องว่าง)' : ` (${targetShiftToSwap.shift_type})`}
+                        </span>
                       ) : (
                         <span className="text-xs italic text-emerald-600/60">ยังไม่ได้เลือก</span>
                       )}

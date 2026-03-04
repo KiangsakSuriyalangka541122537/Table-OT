@@ -65,10 +65,10 @@ export function ShiftSwapRequestModal({
     }
 
     const requesterShift = allShifts.find(s => s.id === requesterShiftId);
-    const targetShift = allShifts.find(s => s.id === targetShiftId);
+    let targetShift = allShifts.find(s => s.id === targetShiftId);
 
-    if (!requesterShift || !targetShift) {
-      setError('ไม่พบข้อมูลกะที่เลือก');
+    if (!requesterShift) {
+      setError('ไม่พบข้อมูลกะของคุณ');
       return;
     }
 
@@ -80,9 +80,9 @@ export function ShiftSwapRequestModal({
         requester_date: requesterShift.date,
         requester_shift_type: requesterShift.shift_type,
         target_staff_id: targetStaffId,
-        target_shift_id: targetShift.id,
-        target_date: targetShift.date,
-        target_shift_type: targetShift.shift_type,
+        target_shift_id: targetShiftId.startsWith('empty-') ? null : targetShiftId,
+        target_date: targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.split('-').slice(2).join('-') : ''),
+        target_shift_type: targetShift?.shift_type || 'O', // Default to 'O' for empty slots
       });
       onClose();
     } catch (err) {
@@ -94,7 +94,18 @@ export function ShiftSwapRequestModal({
   };
 
   const selectedRequesterShift = allShifts.find(s => s.id === requesterShiftId);
-  const selectedTargetShift = allShifts.find(s => s.id === targetShiftId);
+  let selectedTargetShift = allShifts.find(s => s.id === targetShiftId);
+  
+  // Handle virtual shift for display
+  if (!selectedTargetShift && targetShiftId.startsWith('empty-')) {
+    const parts = targetShiftId.split('-');
+    selectedTargetShift = {
+      id: targetShiftId,
+      staff_id: parts[1],
+      date: parts.slice(2).join('-'),
+      shift_type: 'O'
+    };
+  }
   const selectedTargetStaff = allStaff.find(s => s.id === targetStaffId);
 
   return (
@@ -140,10 +151,17 @@ export function ShiftSwapRequestModal({
                 </div>
                 <div className="flex-1 text-center">
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
-                    <span className="text-emerald-600 font-bold text-xs">{selectedTargetShift.shift_type}</span>
+                    <span className="text-emerald-600 font-bold text-xs">
+                      {selectedTargetShift.id.startsWith('empty-') ? '-' : selectedTargetShift.shift_type}
+                    </span>
                   </div>
                   <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของ {selectedTargetStaff.name.split(' ')[0]}</p>
-                  <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedTargetShift.date), 'dd/MM')}</p>
+                  <p className="font-bold text-emerald-900 text-sm">
+                    {selectedTargetShift.id.startsWith('empty-') ? 'ช่องว่าง' : format(new Date(selectedTargetShift.date), 'dd/MM')}
+                  </p>
+                  {selectedTargetShift.id.startsWith('empty-') && (
+                    <p className="text-[10px] text-emerald-500 font-medium">{format(new Date(selectedTargetShift.date), 'dd/MM')}</p>
+                  )}
                 </div>
               </div>
             </div>
