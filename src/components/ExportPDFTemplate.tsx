@@ -74,10 +74,11 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
             font-family: 'Sarabun', sans-serif;
           }
           .pdf-page * { font-family: 'Sarabun', sans-serif; }
-          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 10px; margin-bottom: 4px; table-layout: fixed; }
-          .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 1px; font-weight: normal; overflow: hidden; }
-          .pdf-table th { padding: 2px 1px; font-weight: bold; }
-          .pdf-day-col { width: 18px; font-size: 8px; padding: 0 !important; }
+          .pdf-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; margin-bottom: 8px; table-layout: fixed; }
+          .pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 4px 1px; font-weight: normal; overflow: hidden; height: 24px; }
+          .pdf-table th { padding: 6px 1px; font-weight: bold; }
+          .pdf-day-col { width: 18px; font-size: 11px; padding: 0 !important; font-weight: bold; }
+          .pdf-day-header { font-size: 8px; font-weight: bold; height: 18px; }
           .pdf-bg-gray { background-color: #d1d5db !important; }
           .pdf-text-red { color: #000000 !important; }
         `}</style>
@@ -105,7 +106,7 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
               </tr>
               <tr>
                 {days.map((day) => (
-                  <th key={day} className="pdf-day-col">{day}</th>
+                  <th key={day} className="pdf-day-col pdf-day-header">{day}</th>
                 ))}
               </tr>
             </thead>
@@ -115,7 +116,7 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
                   <td>{row.no}</td>
                   <td className="text-left px-1">{row.name}</td>
                   <td className="text-left px-1">{row.position}</td>
-                  <td>{row.rate}</td>
+                  <td>{row.rate.toLocaleString()}</td>
                   {days.map((day, idx) => {
                     const isWeekendDay = day <= daysInMonth && isWeekend(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
                     return (
@@ -125,14 +126,14 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
                     );
                   })}
                   <td>{row.totalShifts}</td>
-                  <td>{row.totalPay}</td>
+                  <td>{row.totalPay.toLocaleString()}</td>
                   <td></td>
                 </tr>
               ))}
               <tr>
                 <td colSpan={35} style={{ border: 'none' }}></td>
                 <td className="font-bold">{grandTotalShifts}</td>
-                <td className="font-bold">{grandTotalPay}</td>
+                <td className="font-bold">{grandTotalPay.toLocaleString()}</td>
                 <td style={{ border: 'none' }}></td>
               </tr>
             </tbody>
