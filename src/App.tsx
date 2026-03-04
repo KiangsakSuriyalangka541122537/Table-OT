@@ -11,6 +11,7 @@ import { StatsModal } from './components/StatsModal';
 import { AdminManager } from './components/AdminManager';
 import { ShiftSwapRequestModal } from './components/ShiftSwapRequestModal';
 import { ExportPDFTemplate } from './components/ExportPDFTemplate';
+import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
@@ -206,18 +207,23 @@ export default function App() {
       return;
     }
 
+    setRequesterStaff(currentUserStaff);
+
     if (staff.id === currentUserStaff.id) {
-      // Clicking own shift -> requester
-      setRequesterStaff(currentUserStaff);
-      setShiftToSwap(shift);
-      setTargetShiftToSwap(null);
+      // Clicking own shift
+      if (shiftToSwap?.id === shift.id) {
+        setShiftToSwap(null);
+      } else {
+        setShiftToSwap(shift);
+      }
     } else {
-      // Clicking someone else's shift -> target
-      setRequesterStaff(currentUserStaff);
-      setShiftToSwap(null);
-      setTargetShiftToSwap(shift);
+      // Clicking someone else's shift
+      if (targetShiftToSwap?.id === shift.id) {
+        setTargetShiftToSwap(null);
+      } else {
+        setTargetShiftToSwap(shift);
+      }
     }
-    setIsShiftSwapRequestModalOpen(true);
   };
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
@@ -231,6 +237,8 @@ export default function App() {
       });
 
       alert('ส่งคำขอสลับเวรเรียบร้อยแล้ว');
+      setShiftToSwap(null);
+      setTargetShiftToSwap(null);
       fetchData(); // Refresh data to reflect any changes or new requests
     } catch (error) {
       console.error('Error sending swap request:', error);
@@ -484,6 +492,50 @@ export default function App() {
               </div>
             )}
 
+            {!isAdmin && (shiftToSwap || targetShiftToSwap) && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <RefreshCw className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase text-emerald-600">กะของคุณ:</span>
+                      {shiftToSwap ? (
+                        <span className="text-sm font-bold text-emerald-900">{format(new Date(shiftToSwap.date), 'dd/MM')} ({shiftToSwap.shift_type})</span>
+                      ) : (
+                        <span className="text-xs italic text-emerald-600/60">ยังไม่ได้เลือก</span>
+                      )}
+                    </div>
+                    <div className="hidden sm:block w-px h-3 bg-emerald-200"></div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase text-emerald-600">กะที่ต้องการ:</span>
+                      {targetShiftToSwap ? (
+                        <span className="text-sm font-bold text-emerald-900">{staffList.find(s => s.id === targetShiftToSwap.staff_id)?.name.split(' ')[0]} - {format(new Date(targetShiftToSwap.date), 'dd/MM')} ({targetShiftToSwap.shift_type})</span>
+                      ) : (
+                        <span className="text-xs italic text-emerald-600/60">ยังไม่ได้เลือก</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => { setShiftToSwap(null); setTargetShiftToSwap(null); }}
+                    className="px-3 py-1.5 bg-white text-slate-600 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button 
+                    onClick={() => setIsShiftSwapRequestModalOpen(true)}
+                    disabled={!shiftToSwap || !targetShiftToSwap}
+                    className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    ยืนยันการสลับ
+                  </button>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex flex-col justify-center items-center h-96 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
@@ -499,6 +551,8 @@ export default function App() {
                 onCellClick={handleCellClick}
                 onShiftSwapRequest={handleRequestShiftSwap}
                 selectedShiftForMove={selectedShiftForMove}
+                shiftToSwap={shiftToSwap}
+                targetShiftToSwap={targetShiftToSwap}
               />
             )}
           </div>

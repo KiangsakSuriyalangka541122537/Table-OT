@@ -14,6 +14,8 @@ interface GridProps {
   onCellClick: (staffId: string, date: string, currentShift: ShiftType | undefined) => void;
   onShiftSwapRequest: (staff: Staff, shift: Shift) => void;
   selectedShiftForMove?: { staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null;
+  shiftToSwap?: Shift | null;
+  targetShiftToSwap?: Shift | null;
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -30,7 +32,18 @@ const shiftLabels: Record<ShiftType, string> = {
   O: 'หยุด',
 };
 
-export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellClick, onShiftSwapRequest, selectedShiftForMove }: GridProps) {
+export function Grid({ 
+  currentMonth, 
+  staffList, 
+  shifts, 
+  isAdmin, 
+  user, 
+  onCellClick, 
+  onShiftSwapRequest, 
+  selectedShiftForMove,
+  shiftToSwap,
+  targetShiftToSwap
+}: GridProps) {
   const daysInMonth = getDaysInMonth(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1);
@@ -112,6 +125,8 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellCli
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
                   const isSelectedForMove = selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
+                  const isSelectedRequester = shiftToSwap?.staff_id === staff.id && shiftToSwap?.date === dateStr;
+                  const isSelectedTarget = targetShiftToSwap?.staff_id === staff.id && targetShiftToSwap?.date === dateStr;
 
                   return (
                     <td
@@ -131,14 +146,18 @@ export function Grid({ currentMonth, staffList, shifts, isAdmin, user, onCellCli
                         isAdmin && "hover:bg-slate-100/50",
                         isTdy && !shiftType && "bg-indigo-50/20",
                         isWknd && !shiftType && "bg-rose-50/20",
-                        isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50"
+                        isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50",
+                        isSelectedRequester && "ring-2 ring-emerald-500 ring-inset bg-emerald-50",
+                        isSelectedTarget && "ring-2 ring-amber-500 ring-inset bg-amber-50"
                       )}
                     >
                       {shiftType ? (
                         <div className={clsx(
                           "w-full h-7 flex items-center justify-center rounded-md border text-[10px] font-bold transition-transform hover:scale-105 active:scale-95",
                           shiftColors[shiftType],
-                          isSelectedForMove && "ring-2 ring-indigo-500 ring-offset-1"
+                          isSelectedForMove && "ring-2 ring-indigo-500 ring-offset-1",
+                          isSelectedRequester && "ring-2 ring-emerald-500 ring-offset-1",
+                          isSelectedTarget && "ring-2 ring-amber-500 ring-offset-1"
                         )}>
                           {shiftLabels[shiftType]}
                         </div>

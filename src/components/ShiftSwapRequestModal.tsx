@@ -119,86 +119,100 @@ export function ShiftSwapRequestModal({
         )}
 
         <div className="space-y-4 mb-6">
-          {/* Requester Shift Selection */}
-          <div>
-            <label htmlFor="requesterShift" className="block text-sm font-medium text-gray-700 mb-2">กะของคุณที่ต้องการสลับออก</label>
-            <select
-              id="requesterShift"
-              value={requesterShiftId}
-              onChange={(e) => setRequesterShiftId(e.target.value)}
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            >
-              <option value="">-- เลือกกะของคุณ --</option>
-              {myShifts.map(shift => (
-                <option key={shift.id} value={shift.id}>
-                  {shiftLabels[shift.shift_type]} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Summary (Always show if both are selected) */}
+          {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
+            <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100 shadow-sm space-y-4">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">
+                <span>ยืนยันการสลับเวร</span>
+              </div>
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex-1 text-center">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
+                    <span className="text-emerald-600 font-bold text-xs">{selectedRequesterShift.shift_type}</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของคุณ</p>
+                  <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-200">
+                    <RefreshCw className="w-4 h-4 text-white animate-spin-slow" />
+                  </div>
+                </div>
+                <div className="flex-1 text-center">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
+                    <span className="text-emerald-600 font-bold text-xs">{selectedTargetShift.shift_type}</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของ {selectedTargetStaff.name.split(' ')[0]}</p>
+                  <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedTargetShift.date), 'dd/MM')}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          {/* Target Staff Selection */}
-          <div>
-            <label htmlFor="targetStaff" className="block text-sm font-medium text-gray-700 mb-2">เลือกพนักงานที่ต้องการสลับด้วย</label>
-            <select
-              id="targetStaff"
-              value={targetStaffId}
-              onChange={(e) => {
-                setTargetStaffId(e.target.value);
-                setTargetShiftId(''); 
-              }}
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            >
-              <option value="">-- เลือกพนักงาน --</option>
-              {allStaff.filter(s => s.id !== currentStaff.id).map(staff => (
-                <option key={staff.id} value={staff.id}>{staff.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Target Shift Selection */}
-          {targetStaffId && (
-            <div>
-              <label htmlFor="targetShift" className="block text-sm font-medium text-gray-700 mb-2">เลือกกะของเขาที่ต้องการ</label>
-              <select
-                id="targetShift"
-                value={targetShiftId}
-                onChange={(e) => setTargetShiftId(e.target.value)}
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              >
-                <option value="">-- เลือกกะเป้าหมาย --</option>
-                {allShifts
-                  .filter(shift => shift.staff_id === targetStaffId)
-                  .map(shift => (
+          {/* Only show selectors if not fully pre-selected */}
+          {(!initialRequesterShift || !initialTargetShift) && (
+            <div className="space-y-4 pt-2">
+              <div className="h-px bg-slate-100 w-full"></div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">หรือเลือกกะอื่น</p>
+              
+              {/* Requester Shift Selection */}
+              <div>
+                <label htmlFor="requesterShift" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">กะของคุณ</label>
+                <select
+                  id="requesterShift"
+                  value={requesterShiftId}
+                  onChange={(e) => setRequesterShiftId(e.target.value)}
+                  className="block w-full pl-3 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-xl bg-slate-50/50 transition-all font-medium"
+                >
+                  <option value="">-- เลือกกะของคุณ --</option>
+                  {myShifts.map(shift => (
                     <option key={shift.id} value={shift.id}>
                       {shiftLabels[shift.shift_type]} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
                     </option>
                   ))}
-              </select>
-            </div>
-          )}
+                </select>
+              </div>
 
-          {/* Summary */}
-          {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
-            <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100 space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-indigo-600">
-                <span>สรุปการสลับเวร</span>
+              {/* Target Staff Selection */}
+              <div>
+                <label htmlFor="targetStaff" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">พนักงานที่ต้องการสลับด้วย</label>
+                <select
+                  id="targetStaff"
+                  value={targetStaffId}
+                  onChange={(e) => {
+                    setTargetStaffId(e.target.value);
+                    setTargetShiftId(''); 
+                  }}
+                  className="block w-full pl-3 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-xl bg-slate-50/50 transition-all font-medium"
+                >
+                  <option value="">-- เลือกพนักงาน --</option>
+                  {allStaff.filter(s => s.id !== currentStaff.id).map(staff => (
+                    <option key={staff.id} value={staff.id}>{staff.name}</option>
+                  ))}
+                </select>
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 text-center">
-                  <p className="text-[10px] text-gray-500 uppercase mb-1">กะของคุณ</p>
-                  <p className="font-bold text-gray-900">{shiftLabels[selectedRequesterShift.shift_type]}</p>
-                  <p className="text-[10px] text-gray-500">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
+
+              {/* Target Shift Selection */}
+              {targetStaffId && (
+                <div>
+                  <label htmlFor="targetShift" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">กะของเขาที่ต้องการ</label>
+                  <select
+                    id="targetShift"
+                    value={targetShiftId}
+                    onChange={(e) => setTargetShiftId(e.target.value)}
+                    className="block w-full pl-3 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-xl bg-slate-50/50 transition-all font-medium"
+                  >
+                    <option value="">-- เลือกกะเป้าหมาย --</option>
+                    {allShifts
+                      .filter(shift => shift.staff_id === targetStaffId)
+                      .map(shift => (
+                        <option key={shift.id} value={shift.id}>
+                          {shiftLabels[shift.shift_type]} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
+                        </option>
+                      ))}
+                  </select>
                 </div>
-                <div className="flex-shrink-0">
-                  <RefreshCw className="w-4 h-4 text-indigo-400" />
-                </div>
-                <div className="flex-1 text-center">
-                  <p className="text-[10px] text-gray-500 uppercase mb-1">กะของ {selectedTargetStaff.name.split(' ')[0]}</p>
-                  <p className="font-bold text-gray-900">{shiftLabels[selectedTargetShift.shift_type]}</p>
-                  <p className="text-[10px] text-gray-500">{format(new Date(selectedTargetShift.date), 'dd/MM')}</p>
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>
