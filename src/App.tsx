@@ -361,7 +361,7 @@ export default function App() {
         onPublishToggle={handlePublishToggle}
       />
 
-      <main className="flex-1 max-w-full mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-full mx-auto w-full px-2 sm:px-4 py-8">
         {!isAdmin && !rosterStatus?.is_published ? (
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-16 text-center max-w-2xl mx-auto mt-12">
             <div className="mx-auto w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 border border-amber-100 shadow-inner">
