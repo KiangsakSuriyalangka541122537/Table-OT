@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../types';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -130,6 +130,16 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
   const getStaffName = (id: string) => allStaff.find(s => s.id === id)?.name || 'ไม่พบพนักงาน';
 
+  const formatDateSafe = (dateStr: string) => {
+    if (!dateStr) return 'ไม่ระบุวันที่';
+    const date = new Date(dateStr);
+    if (!isValid(date)) return 'วันที่ไม่ถูกต้อง';
+    return format(date, 'dd MMMM yyyy');
+  };
+
+  const getShiftLabel = (type: string) => shiftLabels[type as ShiftType] || type;
+  const getShiftColor = (type: string) => shiftColors[type as ShiftType] || shiftColors['O'];
+
   return (
     <div className="bg-white shadow-sm rounded-xl border border-gray-200 p-6">
       <div className="flex items-center mb-6">
@@ -177,10 +187,10 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
                 <div className="border border-gray-300 rounded-lg p-3 bg-white">
                   <h3 className="text-md font-semibold text-gray-800 mb-2">ผู้ขอสลับเวร</h3>
                   <p className="text-sm text-gray-700 mb-1">ชื่อ: {getStaffName(request.requester_staff_id)}</p>
-                  <p className="text-sm text-gray-700 mb-1">วันที่: {format(new Date(request.requester_date), 'dd MMMM yyyy')}</p>
+                  <p className="text-sm text-gray-700 mb-1">วันที่: {formatDateSafe(request.requester_date)}</p>
                   <p className="text-sm text-gray-700">กะ: 
-                    <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium ml-1", shiftColors[request.requester_shift_type])}>
-                      {shiftLabels[request.requester_shift_type]} ({request.requester_shift_type})
+                    <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium ml-1", getShiftColor(request.requester_shift_type))}>
+                      {getShiftLabel(request.requester_shift_type)} ({request.requester_shift_type})
                     </span>
                   </p>
                 </div>
@@ -189,10 +199,10 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
                 <div className="border border-gray-300 rounded-lg p-3 bg-white">
                   <h3 className="text-md font-semibold text-gray-800 mb-2">ต้องการสลับกับ</h3>
                   <p className="text-sm text-gray-700 mb-1">ชื่อ: {getStaffName(request.target_staff_id)}</p>
-                  <p className="text-sm text-gray-700 mb-1">วันที่: {format(new Date(request.target_date), 'dd MMMM yyyy')}</p>
+                  <p className="text-sm text-gray-700 mb-1">วันที่: {formatDateSafe(request.target_date)}</p>
                   <p className="text-sm text-gray-700">กะ: 
-                    <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium ml-1", shiftColors[request.target_shift_type])}>
-                      {shiftLabels[request.target_shift_type]} ({request.target_shift_type})
+                    <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium ml-1", getShiftColor(request.target_shift_type))}>
+                      {getShiftLabel(request.target_shift_type)} ({request.target_shift_type})
                     </span>
                   </p>
                 </div>

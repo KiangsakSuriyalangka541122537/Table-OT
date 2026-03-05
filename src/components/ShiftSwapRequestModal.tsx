@@ -72,6 +72,13 @@ export function ShiftSwapRequestModal({
       return;
     }
 
+    const targetDate = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.split('-').slice(2).join('-') : '');
+
+    if (!targetDate) {
+      setError('ไม่สามารถระบุวันที่ของกะเป้าหมายได้ กรุณาลองใหม่อีกครั้ง');
+      return;
+    }
+
     setLoading(true);
     try {
       await onSendRequest({
@@ -81,7 +88,7 @@ export function ShiftSwapRequestModal({
         requester_shift_type: requesterShift.shift_type,
         target_staff_id: targetStaffId,
         target_shift_id: targetShiftId.startsWith('empty-') ? null : targetShiftId,
-        target_date: targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.split('-').slice(2).join('-') : ''),
+        target_date: targetDate,
         target_shift_type: targetShift?.shift_type || 'O', // Default to 'O' for empty slots
       });
       onClose();

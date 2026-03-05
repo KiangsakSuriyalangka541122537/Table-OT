@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus, User } from '../types';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Bell, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -118,6 +118,17 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
 
   const getStaffName = (id: string) => allStaff.find(s => s.id === id)?.name || 'ไม่พบพนักงาน';
 
+  const formatDateSafe = (dateStr: string) => {
+    if (!dateStr) return 'ไม่ระบุวันที่';
+    const date = new Date(dateStr);
+    if (!isValid(date)) return 'วันที่ไม่ถูกต้อง';
+    return format(date, 'dd/MM');
+  };
+
+  const getShiftColor = (type: string) => {
+    return shiftColors[type as ShiftType] || shiftColors['O'];
+  };
+
   if (!currentUserStaff) return null;
 
   return (
@@ -170,14 +181,14 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
                     <div className="bg-white border border-slate-200 rounded-xl p-3 mb-3 space-y-2">
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="text-slate-400 uppercase font-bold">เวรของเขา:</span>
-                        <span className={clsx("px-1.5 py-0.5 rounded font-bold", shiftColors[request.requester_shift_type])}>
-                          {format(new Date(request.requester_date), 'dd/MM')} ({request.requester_shift_type})
+                        <span className={clsx("px-1.5 py-0.5 rounded font-bold", getShiftColor(request.requester_shift_type))}>
+                          {formatDateSafe(request.requester_date)} ({request.requester_shift_type})
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="text-slate-400 uppercase font-bold">เวรของคุณ:</span>
-                        <span className={clsx("px-1.5 py-0.5 rounded font-bold", request.target_shift_type === 'O' ? shiftColors['O'] : shiftColors[request.target_shift_type])}>
-                          {request.target_shift_id ? format(new Date(request.target_date), 'dd/MM') : 'ช่องว่าง'} ({request.target_shift_type})
+                        <span className={clsx("px-1.5 py-0.5 rounded font-bold", getShiftColor(request.target_shift_type))}>
+                          {request.target_shift_id ? formatDateSafe(request.target_date) : 'ช่องว่าง'} ({request.target_shift_type})
                         </span>
                       </div>
                     </div>
