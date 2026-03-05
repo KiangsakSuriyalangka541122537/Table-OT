@@ -257,6 +257,9 @@ export default function App() {
       
       const { error } = await supabase.from('shift_swap_requests').insert({
         ...request,
+        target_shift_id: request.target_shift_id && !request.target_shift_id.startsWith('empty-') 
+          ? request.target_shift_id 
+          : null,
         status: initialStatus
       });
       if (error) {
