@@ -3,6 +3,7 @@ import { format, addDays, getDaysInMonth } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { supabase } from './lib/supabase';
 import { User, Staff, Shift, ShiftType, RosterStatus, ShiftSwapRequest, ShiftSwapStatus } from './types';
+import { exportToExcel } from './utils/exportToExcel';
 import { Header } from './components/Header';
 import { Grid } from './components/Grid';
 import { LoginModal } from './components/LoginModal';
@@ -436,23 +437,13 @@ export default function App() {
     }
   };
 
-  const handleExportExcel = () => {
-    const daysInMonth = getDaysInMonth(currentMonth);
-    const days = Array.from({ length: daysInMonth }, (_, i) => format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1), 'yyyy-MM-dd'));
-    
-    const exportData = staffList.map(staff => {
-      const rowData: any = { 'Staff Name': staff.name };
-      days.forEach(dateStr => {
-        const shift = shifts.find(s => s.staff_id === staff.id && s.date === dateStr);
-        rowData[format(new Date(dateStr), 'dd/MM')] = shift ? shift.shift_type : '-';
-      });
-      return rowData;
-    });
-
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Roster');
-    XLSX.writeFile(wb, `Roster_${monthKey}.xlsx`);
+  const handleExportExcel = async () => {
+    try {
+      await exportToExcel(currentMonth, staffList, shifts);
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      alert('เกิดข้อผิดพลาดในการส่งออก Excel');
+    }
   };
 
   return (
