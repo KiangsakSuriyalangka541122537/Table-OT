@@ -38,7 +38,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       const { data, error } = await supabase
         .from('shift_swap_requests')
         .select('*')
-        .eq('status', ShiftSwapStatus.PENDING)
+        .in('status', [ShiftSwapStatus.PENDING, ShiftSwapStatus.WAITING_TARGET])
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -55,20 +55,29 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setLoading(true);
     setError(null);
     try {
-      // 1. Update shifts table for requester
-      await supabase.from('shifts').upsert(
-        { id: request.requester_shift_id, staff_id: request.target_staff_id, date: request.requester_date, shift_type: request.requester_shift_type },
-        { onConflict: 'id' }
-      );
+      // 1. Update requester's shift to target staff
+      if (request.requester_shift_id) {
+        await supabase.from('shifts').update({
+          staff_id: request.target_staff_id,
+          date: request.target_date,
+          shift_type: request.requester_shift_type
+        }).eq('id', request.requester_shift_id);
+      }
 
-      // 2. Update shifts table for target
-      await supabase.from('shifts').upsert(
-        { id: request.target_shift_id, staff_id: request.requester_staff_id, date: request.target_date, shift_type: request.target_shift_type },
-        { onConflict: 'id' }
-      );
+      // 2. Update target's shift to requester staff (if it exists)
+      if (request.target_shift_id) {
+        await supabase.from('shifts').update({
+          staff_id: request.requester_staff_id,
+          date: request.requester_date,
+          shift_type: request.target_shift_type
+        }).eq('id', request.target_shift_id);
+      }
 
       // 3. Update request status
-      await supabase.from('shift_swap_requests').update({ status: ShiftSwapStatus.APPROVED, updated_at: new Date().toISOString() }).eq('id', request.id);
+      await supabase.from('shift_swap_requests').update({ 
+        status: ShiftSwapStatus.APPROVED, 
+        updated_at: new Date().toISOString() 
+      }).eq('id', request.id);
 
       // 4. Log action
       await supabase.from('logs').insert({
@@ -140,10 +149,18 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         <div className="space-y-6">
           {pendingRequests.map(request => (
             <div key={request.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <p className="text-sm text-gray-600 mb-2">
-                <Clock className="w-4 h-4 inline-block mr-1 text-gray-500" />
-                ส่งเมื่อ: {format(new Date(request.created_at), 'dd MMMM yyyy HH:mm')}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-600">
+                  <Clock className="w-4 h-4 inline-block mr-1 text-gray-500" />
+                  ส่งเมื่อ: {format(new Date(request.created_at), 'dd MMMM yyyy HH:mm')}
+                </p>
+                <span className={clsx(
+                  "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                  request.status === ShiftSwapStatus.WAITING_TARGET ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"
+                )}>
+                  {request.status === ShiftSwapStatus.WAITING_TARGET ? 'รอเพื่อนยืนยัน' : 'รออนุมัติ'}
+                </span>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Requester's Shift */}
@@ -181,7 +198,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
                 </button>
                 <button
                   onClick={() => handleApprove(request)}
-                  disabled={loading}
+                  disabled={loading || request.status === ShiftSwapStatus.WAITING_TARGET}
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CheckCircle className="w-4 h-4 inline-block mr-2" /> อนุมัติ

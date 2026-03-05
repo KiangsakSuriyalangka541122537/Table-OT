@@ -28,9 +28,10 @@ export interface RosterStatus {
 }
 
 export enum ShiftSwapStatus {
-  PENDING = 'pending',
+  PENDING = 'pending', // Waiting for Admin
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  WAITING_TARGET = 'waiting_target', // Waiting for the other person to confirm
 }
 
 export interface ShiftSwapRequest {

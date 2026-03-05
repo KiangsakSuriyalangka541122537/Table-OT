@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format, addDays, getDaysInMonth } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { supabase } from './lib/supabase';
-import { User, Staff, Shift, ShiftType, RosterStatus, ShiftSwapRequest } from './types';
+import { User, Staff, Shift, ShiftType, RosterStatus, ShiftSwapRequest, ShiftSwapStatus } from './types';
 import { Header } from './components/Header';
 import { Grid } from './components/Grid';
 import { LoginModal } from './components/LoginModal';
@@ -250,15 +250,23 @@ export default function App() {
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
     try {
-      const { error } = await supabase.from('shift_swap_requests').insert(request);
+      const initialStatus = request.target_shift_id ? ShiftSwapStatus.WAITING_TARGET : ShiftSwapStatus.PENDING;
+      
+      const { error } = await supabase.from('shift_swap_requests').insert({
+        ...request,
+        status: initialStatus
+      });
       if (error) throw error;
 
       await supabase.from('logs').insert({
-        message: `Staff ${request.requester_staff_id} requested to swap shift ${request.requester_shift_id} with ${request.target_staff_id}'s shift ${request.target_shift_id}`,
+        message: `Staff ${request.requester_staff_id} requested to swap shift ${request.requester_shift_id} with ${request.target_staff_id}'s shift ${request.target_shift_id}. Status: ${initialStatus}`,
         action_type: 'SHIFT_SWAP_REQUEST_SENT'
       });
 
-      alert('ส่งคำขอสลับเวรเรียบร้อยแล้ว');
+      alert(initialStatus === ShiftSwapStatus.WAITING_TARGET 
+        ? 'ส่งคำขอสลับเวรแล้ว กรุณารอเพื่อนร่วมงานยืนยัน' 
+        : 'ส่งคำขอสลับเวรแล้ว กรุณารอผู้ดูแลระบบอนุมัติ');
+      
       setShiftToSwap(null);
       setTargetShiftToSwap(null);
       fetchData(); // Refresh data to reflect any changes or new requests
@@ -452,6 +460,9 @@ export default function App() {
         onStatsClick={() => setIsStatsOpen(true)}
         isPublished={rosterStatus?.is_published || false}
         onPublishToggle={handlePublishToggle}
+        allStaff={staffList}
+        allShifts={shifts}
+        onUpdate={fetchData}
       />
 
       <main className="flex-1 max-w-full mx-auto w-full px-2 sm:px-4 py-8">
@@ -534,7 +545,7 @@ export default function App() {
                       <span className="text-[10px] font-bold uppercase text-emerald-600">กะที่ต้องการ:</span>
                       {targetShiftToSwap ? (
                         <span className="text-sm font-bold text-emerald-900">
-                          {staffList.find(s => s.id === targetShiftToSwap.staff_id)?.name.split(' ')[0]} - {format(new Date(targetShiftToSwap.date), 'dd/MM')} 
+                          {staffList.find(s => s.id === targetShiftToSwap.staff_id)?.name?.split(' ')[0] || 'ไม่พบพนักงาน'} - {format(new Date(targetShiftToSwap.date), 'dd/MM')} 
                           {targetShiftToSwap.id.startsWith('empty-') ? ' (ช่องว่าง)' : ` (${targetShiftToSwap.shift_type})`}
                         </span>
                       ) : (
