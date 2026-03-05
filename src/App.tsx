@@ -250,6 +250,7 @@ export default function App() {
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('Sending swap request:', request);
       const initialStatus = (request.target_staff_id !== request.requester_staff_id) 
         ? ShiftSwapStatus.WAITING_TARGET 
         : ShiftSwapStatus.PENDING;
@@ -258,7 +259,10 @@ export default function App() {
         ...request,
         status: initialStatus
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       await supabase.from('logs').insert({
         message: `Staff ${request.requester_staff_id} requested to swap shift ${request.requester_shift_id} with ${request.target_staff_id}'s shift ${request.target_shift_id}. Status: ${initialStatus}`,
