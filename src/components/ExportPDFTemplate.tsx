@@ -78,7 +78,7 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
           .pdf-text-red { color: #000000 !important; }
         `}</style>
 
-        {/* Page 1: Payment Evidence (Only Page) */}
+        {/* Page 1: Payment Evidence */}
         <div className="pdf-page">
           <div className="text-center mb-6 space-y-1">
             <h1 className="text-base font-bold">หลักฐานการจ่ายค่าตอบแทนการปฏิบัติงานนอกเวลาราชการ</h1>
@@ -182,6 +182,102 @@ export const ExportPDFTemplate = forwardRef<HTMLDivElement, ExportPDFTemplatePro
                 <p className="mb-1">ลงชื่อ...........................................................</p>
                 <p>(นายมงคล ลือชูวงศ์)</p>
                 <p>ผู้อำนวยการโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Page 2: Request for Approval */}
+        <div className="pdf-page">
+          <div className="text-center mb-6 space-y-1">
+            <h1 className="text-base font-bold">หลักฐานการขออนุมัติปฏิบัติงานนอกเวลาราชการ</h1>
+            <p className="text-xs font-bold">เวรเช้า 08.00 - 16.00 น. เวรบ่าย 16.00 - 24.00 น. เวรดึก 24.00 - 08.00 น.</p>
+            <p className="text-sm font-bold">
+              ส่วนราชการโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช ประจำเดือน {monthName} พ.ศ. {year} กลุ่มงานเทคโนโลยีสารสนเทศ และ กลุ่มงานสุขภาพดิจิทัล
+            </p>
+          </div>
+
+          <table className="pdf-table">
+            <thead>
+              <tr>
+                <th className="w-6" rowSpan={2}>ลำดับ<br/>ที่</th>
+                <th className="w-36" rowSpan={2}>ชื่อ -สกุล</th>
+                <th className="w-28" rowSpan={2}>ตำแหน่ง</th>
+                <th className="w-10" rowSpan={2}>อัตราเงิน<br/>ตอบแทน</th>
+                <th colSpan={31}>วันที่ขึ้นปฏิบัติงาน</th>
+                <th className="w-10" rowSpan={2}>จำนวน<br/>เวร</th>
+                <th className="w-14" rowSpan={2}>จำนวนเงิน</th>
+              </tr>
+              <tr>
+                {days.map((day) => (
+                  <th key={day} className="pdf-day-col pdf-day-header">{day}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i}>
+                  <td>{row.no}</td>
+                  <td className="text-left px-1">{row.name}</td>
+                  <td className="text-left px-1">{row.position}</td>
+                  <td>{row.rate.toLocaleString()}</td>
+                  {days.map((day, idx) => {
+                    const isWeekendDay = day <= daysInMonth && isWeekend(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+                    return (
+                      <td key={idx} className={`${isWeekendDay ? 'pdf-bg-gray' : ''} pdf-day-col`}>
+                        {row.shifts[idx]}
+                      </td>
+                    );
+                  })}
+                  <td>{row.totalShifts}</td>
+                  <td>{row.totalPay.toLocaleString()}</td>
+                </tr>
+              ))}
+              <tr>
+                <td colSpan={35} style={{ border: 'none' }}></td>
+                <td className="font-bold">{grandTotalShifts}</td>
+                <td className="font-bold">{grandTotalPay.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="text-left font-bold text-[10px] mt-1">หมายเหตุ : เวรบ่ายและดึก รวมกัน 750 บาท</div>
+
+          <div className="w-full text-center mt-4 mb-6">
+            <p className="text-sm">รวมการจ่ายเงินทั้งสิ้น (ตัวอักษร) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {getThaiBaht(grandTotalPay)} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 text-[11px] mt-12">
+            {/* Column 1 */}
+            <div className="flex flex-col items-center space-y-2">
+              <p className="font-bold mb-10">เรียนผู้อำนวยการโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</p>
+              <div className="text-center">
+                <p className="mb-1">ลงชื่อ...........................................................</p>
+                <p>(นายกิตติพงษ์ ชัยศรี)</p>
+                <p>นักวิชาการคอมพิวเตอร์ชำนาญการ</p>
+                <p>หัวหน้ากลุ่มงานเทคโนโลยีสารสนเทศ</p>
+              </div>
+            </div>
+
+            {/* Column 2 */}
+            <div className="flex flex-col items-center space-y-2">
+              <p className="font-bold mb-10">เรียนผู้อำนวยการโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</p>
+              <div className="text-center">
+                <p className="mb-1">ลงชื่อ...........................................................</p>
+                <p>(นายสมิทธ์ เกิดสินธุ์)</p>
+                <p>นายแพทย์เชี่ยวชาญ</p>
+                <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
+              </div>
+            </div>
+
+            {/* Column 3 */}
+            <div className="flex flex-col items-center space-y-2">
+              <p className="font-bold mb-10">คำสั่งผู้อำนวยการ</p>
+              <div className="text-center">
+                <p className="mb-1">ลงชื่อ...........................................................</p>
+                <p>(นายสมิทธ์ เกิดสินธุ์)</p>
+                <p>นายแพทย์เชี่ยวชาญ</p>
+                <p>หัวหน้ากลุ่มภารกิจสุขภาพดิจิทัล</p>
               </div>
             </div>
           </div>
