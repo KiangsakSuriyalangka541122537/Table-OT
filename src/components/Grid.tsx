@@ -61,7 +61,7 @@ export function Grid({
         <thead className="bg-slate-50 sticky top-0 z-10">
           <tr>
             <th scope="col" className="px-3 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50 z-20 border-r border-slate-200 w-40">
-              ชื่อพนักงาน
+              รายชื่อบุคลากร
             </th>
             {days.map((day) => {
               const isWknd = isWeekend(day);
