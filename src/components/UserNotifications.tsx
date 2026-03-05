@@ -33,13 +33,25 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
 
   useEffect(() => {
     if (currentUserStaff) {
+      console.log('UserNotifications mounted for:', currentUserStaff.name);
       fetchUserRequests();
+      
+      // Poll for new requests every 10 seconds
+      const interval = setInterval(() => {
+        fetchUserRequests();
+      }, 10000);
+
+      return () => clearInterval(interval);
+    } else {
+      console.log('UserNotifications: No current staff found for user:', user?.name);
     }
   }, [currentUserStaff]);
 
   const fetchUserRequests = async () => {
     if (!currentUserStaff) return;
-    setLoading(true);
+    // Don't set loading to true on background polls to avoid UI flickering
+    // Only set loading on initial fetch or manual refresh
+    
     try {
       const { data, error } = await supabase
         .from('shift_swap_requests')
@@ -52,10 +64,15 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       setRequests(data || []);
     } catch (err) {
       console.error('Error fetching user notifications:', err);
-      setError('ไม่สามารถโหลดข้อมูลได้');
+      // Don't show error on every poll failure to avoid annoyance
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleManualRefresh = () => {
+    setLoading(true);
+    fetchUserRequests();
   };
 
   const handleAccept = async (request: ShiftSwapRequest) => {
@@ -152,9 +169,18 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <h3 className="text-sm font-bold text-slate-900">คำขอสลับเวร</h3>
-            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
-              {requests.length} รายการ
-            </span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleManualRefresh}
+                className="p-1 text-slate-400 hover:text-indigo-600 rounded-full hover:bg-indigo-50 transition-colors"
+                title="รีเฟรช"
+              >
+                <RefreshCw className={clsx("w-3.5 h-3.5", loading && "animate-spin")} />
+              </button>
+              <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
+                {requests.length} รายการ
+              </span>
+            </div>
           </div>
 
           <div className="max-h-96 overflow-y-auto">
