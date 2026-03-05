@@ -176,7 +176,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
                       </div>
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="text-slate-400 uppercase font-bold">เวรของคุณ:</span>
-                        <span className={clsx("px-1.5 py-0.5 rounded font-bold", shiftColors[request.target_shift_type])}>
+                        <span className={clsx("px-1.5 py-0.5 rounded font-bold", request.target_shift_type === 'O' ? shiftColors['O'] : shiftColors[request.target_shift_type])}>
                           {request.target_shift_id ? format(new Date(request.target_date), 'dd/MM') : 'ช่องว่าง'} ({request.target_shift_type})
                         </span>
                       </div>

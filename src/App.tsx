@@ -250,7 +250,9 @@ export default function App() {
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
     try {
-      const initialStatus = request.target_shift_id ? ShiftSwapStatus.WAITING_TARGET : ShiftSwapStatus.PENDING;
+      const initialStatus = (request.target_staff_id !== request.requester_staff_id) 
+        ? ShiftSwapStatus.WAITING_TARGET 
+        : ShiftSwapStatus.PENDING;
       
       const { error } = await supabase.from('shift_swap_requests').insert({
         ...request,

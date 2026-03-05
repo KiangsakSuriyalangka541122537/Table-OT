@@ -55,25 +55,35 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setLoading(true);
     setError(null);
     try {
-      // 1. Update requester's shift to target staff
-      if (request.requester_shift_id) {
+      // 1. Swap Logic
+      if (request.requester_shift_id && request.target_shift_id) {
+        // Case A: Swapping two existing shifts
+        // We swap the staff_id of the two shifts.
+        // Shift A (Requester) -> Becomes Target Staff
+        // Shift B (Target) -> Becomes Requester Staff
+        
+        // Update Requester's Shift
+        await supabase.from('shifts').update({
+          staff_id: request.target_staff_id
+        }).eq('id', request.requester_shift_id);
+
+        // Update Target's Shift
+        await supabase.from('shifts').update({
+          staff_id: request.requester_staff_id
+        }).eq('id', request.target_shift_id);
+
+      } else if (request.requester_shift_id && !request.target_shift_id) {
+        // Case B: Moving Requester's Shift to an Empty Slot (Target)
+        // Shift A (Requester) -> Becomes Target Staff AND Target Date
+        // We keep the original shift_type (the work obligation moves).
+        
         await supabase.from('shifts').update({
           staff_id: request.target_staff_id,
-          date: request.target_date,
-          shift_type: request.requester_shift_type
+          date: request.target_date
         }).eq('id', request.requester_shift_id);
       }
 
-      // 2. Update target's shift to requester staff (if it exists)
-      if (request.target_shift_id) {
-        await supabase.from('shifts').update({
-          staff_id: request.requester_staff_id,
-          date: request.requester_date,
-          shift_type: request.target_shift_type
-        }).eq('id', request.target_shift_id);
-      }
-
-      // 3. Update request status
+      // 2. Update request status
       await supabase.from('shift_swap_requests').update({ 
         status: ShiftSwapStatus.APPROVED, 
         updated_at: new Date().toISOString() 
