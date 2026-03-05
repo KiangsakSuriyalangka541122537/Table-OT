@@ -28,8 +28,27 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const notificationRef = React.useRef<HTMLDivElement>(null);
 
   const currentUserStaff = allStaff.find(s => s.name === user.name);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (currentUserStaff) {
@@ -126,6 +145,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       alert('ยืนยันการสลับเวรเรียบร้อยแล้ว ข้อมูลในตารางเวรถูกอัปเดตทันที');
       fetchUserRequests();
       onUpdate(); // Refresh the main grid
+      setIsOpen(false);
     } catch (err: any) {
       console.error('Error accepting swap request:', err);
       alert(`เกิดข้อผิดพลาด: ${err.message}`);
@@ -155,6 +175,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       alert('ปฏิเสธคำขอสลับเวรแล้ว');
       fetchUserRequests();
       onUpdate();
+      setIsOpen(false);
     } catch (err) {
       console.error('Error rejecting swap request:', err);
       alert('เกิดข้อผิดพลาด');
@@ -183,7 +204,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   if (!currentUserStaff) return null;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={notificationRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
