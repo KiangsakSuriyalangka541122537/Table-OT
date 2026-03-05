@@ -263,7 +263,7 @@ export default function App() {
         status: initialStatus
       });
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase error details:', JSON.stringify(error, null, 2));
         throw error;
       }
 
