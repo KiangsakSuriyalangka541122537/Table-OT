@@ -86,10 +86,10 @@ export function Grid({
                 </th>
               );
             })}
-            <th scope="col" className="px-1 py-4 text-center text-[9px] font-bold text-indigo-600 uppercase tracking-tighter bg-indigo-50/30 border-l border-slate-200 w-14">
+            <th scope="col" className="px-1 py-4 text-center text-[11px] font-bold text-indigo-600 uppercase tracking-tighter bg-indigo-50/30 border-l border-slate-200 w-16">
               รวมเวร
             </th>
-            <th scope="col" className="px-1 py-4 text-center text-[9px] font-bold text-emerald-600 uppercase tracking-tighter bg-emerald-50/30 border-l border-slate-200 w-16">
+            <th scope="col" className="px-1 py-4 text-center text-[11px] font-bold text-emerald-600 uppercase tracking-tighter bg-emerald-50/30 border-l border-slate-200 w-20">
               รวมเงิน
             </th>
           </tr>
@@ -170,10 +170,10 @@ export function Grid({
                   );
                 })}
                 <td className="px-1 py-3 whitespace-nowrap text-center bg-indigo-50/10 border-l border-slate-100">
-                  <span className="text-[11px] font-bold text-indigo-600">{totalShifts}</span>
+                  <span className="text-sm font-bold text-indigo-600">{totalShifts}</span>
                 </td>
                 <td className="px-1 py-3 whitespace-nowrap text-center bg-emerald-50/10 border-l border-slate-100">
-                  <span className="text-[10px] font-bold text-emerald-600">{totalPay.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-emerald-600">{totalPay.toLocaleString()}</span>
                 </td>
               </tr>
             );
@@ -187,7 +187,7 @@ export function Grid({
                 <td key={day.toISOString()} className="px-0.5 py-2 border-r border-slate-100"></td>
               ))}
               <td className="px-1 py-3 whitespace-nowrap text-center bg-indigo-100/30 border-l border-slate-200">
-                <span className="text-[11px] font-black text-indigo-700">
+                <span className="text-sm font-black text-indigo-700">
                   {staffList.reduce((acc, staff) => {
                     const staffShifts = shifts.filter(s => s.staff_id === staff.id);
                     const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
@@ -198,7 +198,7 @@ export function Grid({
                 </span>
               </td>
               <td className="px-1 py-3 whitespace-nowrap text-center bg-emerald-100/30 border-l border-slate-200">
-                <span className="text-[10px] font-black text-emerald-700">
+                <span className="text-sm font-black text-emerald-700">
                   ฿{staffList.reduce((acc, staff) => {
                     const staffShifts = shifts.filter(s => s.staff_id === staff.id);
                     const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
