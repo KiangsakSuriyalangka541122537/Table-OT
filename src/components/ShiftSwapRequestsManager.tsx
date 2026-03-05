@@ -58,36 +58,39 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       // 1. Swap Logic
       if (request.requester_shift_id && request.target_shift_id) {
         // Case A: Swapping two existing shifts
-        // We swap the staff_id of the two shifts.
-        // Shift A (Requester) -> Becomes Target Staff
-        // Shift B (Target) -> Becomes Requester Staff
         
         // Update Requester's Shift
-        await supabase.from('shifts').update({
+        const { error: error1 } = await supabase.from('shifts').update({
           staff_id: request.target_staff_id
         }).eq('id', request.requester_shift_id);
+        
+        if (error1) throw new Error(`Failed to update requester shift: ${error1.message}`);
 
         // Update Target's Shift
-        await supabase.from('shifts').update({
+        const { error: error2 } = await supabase.from('shifts').update({
           staff_id: request.requester_staff_id
         }).eq('id', request.target_shift_id);
 
+        if (error2) throw new Error(`Failed to update target shift: ${error2.message}`);
+
       } else if (request.requester_shift_id && !request.target_shift_id) {
-        // Case B: Moving Requester's Shift to an Empty Slot (Target)
-        // Shift A (Requester) -> Becomes Target Staff AND Target Date
-        // We keep the original shift_type (the work obligation moves).
+        // Case B: Moving Requester's Shift to an Empty Slot
         
-        await supabase.from('shifts').update({
+        const { error: error3 } = await supabase.from('shifts').update({
           staff_id: request.target_staff_id,
           date: request.target_date
         }).eq('id', request.requester_shift_id);
+
+        if (error3) throw new Error(`Failed to move shift: ${error3.message}`);
       }
 
       // 2. Update request status
-      await supabase.from('shift_swap_requests').update({ 
+      const { error: updateError } = await supabase.from('shift_swap_requests').update({ 
         status: ShiftSwapStatus.APPROVED, 
         updated_at: new Date().toISOString() 
       }).eq('id', request.id);
+
+      if (updateError) throw updateError;
 
       // 4. Log action
       await supabase.from('logs').insert({
