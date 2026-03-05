@@ -162,13 +162,10 @@ export function ShiftSwapRequestModal({
                       {selectedTargetShift.id.startsWith('empty-') ? '-' : selectedTargetShift.shift_type}
                     </span>
                   </div>
-                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของ {selectedTargetStaff.name.split(' ')[0]}</p>
+                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของ {selectedTargetStaff.name ? selectedTargetStaff.name.split(' ')[0] : 'เพื่อน'}</p>
                   <p className="font-bold text-emerald-900 text-sm">
                     {selectedTargetShift.id.startsWith('empty-') ? 'ช่องว่าง' : format(new Date(selectedTargetShift.date), 'dd/MM')}
                   </p>
-                  {selectedTargetShift.id.startsWith('empty-') && (
-                    <p className="text-[10px] text-emerald-500 font-medium">{format(new Date(selectedTargetShift.date), 'dd/MM')}</p>
-                  )}
                 </div>
               </div>
             </div>

@@ -116,7 +116,10 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     }
   };
 
-  const getStaffName = (id: string) => allStaff.find(s => s.id === id)?.name || 'ไม่พบพนักงาน';
+  const getStaffName = (id: string) => {
+    if (!id) return 'ไม่ระบุ';
+    return allStaff.find(s => s.id === id)?.name || 'ไม่พบพนักงาน';
+  };
 
   const formatDateSafe = (dateStr: string) => {
     if (!dateStr) return 'ไม่ระบุวันที่';
@@ -126,6 +129,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   };
 
   const getShiftColor = (type: string) => {
+    if (!type) return shiftColors['O'];
     return shiftColors[type as ShiftType] || shiftColors['O'];
   };
 

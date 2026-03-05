@@ -138,7 +138,10 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
   };
 
   const getShiftLabel = (type: string) => shiftLabels[type as ShiftType] || type;
-  const getShiftColor = (type: string) => shiftColors[type as ShiftType] || shiftColors['O'];
+  const getShiftColor = (type: string) => {
+    if (!type) return shiftColors['O'];
+    return shiftColors[type as ShiftType] || shiftColors['O'];
+  };
 
   return (
     <div className="bg-white shadow-sm rounded-xl border border-gray-200 p-6">
