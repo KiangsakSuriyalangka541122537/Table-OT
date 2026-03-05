@@ -72,7 +72,7 @@ export function ShiftSwapRequestModal({
       return;
     }
 
-    const targetDate = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.split('-').slice(2).join('-') : '');
+    const targetDate = targetShift?.date || (targetShiftId.startsWith('empty-') ? targetShiftId.slice(-10) : '');
 
     if (!targetDate) {
       setError('ไม่สามารถระบุวันที่ของกะเป้าหมายได้ กรุณาลองใหม่อีกครั้ง');
