@@ -181,11 +181,10 @@ export function Grid({
           {staffList.length > 0 && (
             <tr className="bg-slate-50/80 font-bold">
               <td className="px-3 py-3 whitespace-nowrap text-xs text-slate-900 sticky left-0 bg-slate-50 z-10 border-r border-slate-200">
+              </td>
+              <td colSpan={days.length} className="px-4 py-3 text-right text-xs text-slate-900 border-r border-slate-100">
                 รวมทั้งหมด
               </td>
-              {days.map((day) => (
-                <td key={day.toISOString()} className="px-0.5 py-2 border-r border-slate-100"></td>
-              ))}
               <td className="px-1 py-3 whitespace-nowrap text-center bg-indigo-100/30 border-l border-slate-200">
                 <span className="text-sm font-black text-indigo-700">
                   {staffList.reduce((acc, staff) => {
