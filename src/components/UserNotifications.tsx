@@ -78,10 +78,40 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const handleAccept = async (request: ShiftSwapRequest) => {
     setLoading(true);
     try {
+      // 1. Execute Swap Logic Immediately
+      if (request.requester_shift_id && request.target_shift_id) {
+        // Case A: Swapping two existing shifts
+        
+        // Update Requester's Shift -> Assign to Target Staff
+        const { error: error1 } = await supabase.from('shifts').update({
+          staff_id: request.target_staff_id
+        }).eq('id', request.requester_shift_id);
+        
+        if (error1) throw new Error(`Failed to update requester shift: ${error1.message}`);
+
+        // Update Target's Shift -> Assign to Requester Staff
+        const { error: error2 } = await supabase.from('shifts').update({
+          staff_id: request.requester_staff_id
+        }).eq('id', request.target_shift_id);
+
+        if (error2) throw new Error(`Failed to update target shift: ${error2.message}`);
+
+      } else if (request.requester_shift_id && !request.target_shift_id) {
+        // Case B: Moving Requester's Shift to an Empty Slot (Target)
+        
+        const { error: error3 } = await supabase.from('shifts').update({
+          staff_id: request.target_staff_id,
+          date: request.target_date
+        }).eq('id', request.requester_shift_id);
+
+        if (error3) throw new Error(`Failed to move shift: ${error3.message}`);
+      }
+
+      // 2. Update request status to APPROVED directly
       const { error } = await supabase
         .from('shift_swap_requests')
         .update({ 
-          status: ShiftSwapStatus.PENDING, 
+          status: ShiftSwapStatus.APPROVED, 
           updated_at: new Date().toISOString() 
         })
         .eq('id', request.id);
@@ -89,16 +119,16 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       if (error) throw error;
 
       await supabase.from('logs').insert({
-        message: `Staff ${user.name} accepted swap request ${request.id} from ${getStaffName(request.requester_staff_id)}. Now pending Admin approval.`,
-        action_type: 'SHIFT_SWAP_ACCEPTED_BY_TARGET'
+        message: `Staff ${user.name} accepted swap request ${request.id}. Swap executed immediately.`,
+        action_type: 'SHIFT_SWAP_APPROVED_BY_TARGET'
       });
 
-      alert('ยืนยันการสลับเวรแล้ว กรุณารอผู้ดูแลระบบอนุมัติขั้นสุดท้าย');
+      alert('ยืนยันการสลับเวรเรียบร้อยแล้ว ข้อมูลในตารางเวรถูกอัปเดตทันที');
       fetchUserRequests();
-      onUpdate();
-    } catch (err) {
+      onUpdate(); // Refresh the main grid
+    } catch (err: any) {
       console.error('Error accepting swap request:', err);
-      alert('เกิดข้อผิดพลาด');
+      alert(`เกิดข้อผิดพลาด: ${err.message}`);
     } finally {
       setLoading(false);
     }
