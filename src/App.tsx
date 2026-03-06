@@ -150,7 +150,7 @@ export default function App() {
       const { data: pendingSwapsData, error: pendingSwapsError } = await supabase
         .from('shift_swap_requests')
         .select('*')
-        .eq('status', ShiftSwapStatus.PENDING);
+        .in('status', [ShiftSwapStatus.PENDING, ShiftSwapStatus.WAITING_TARGET]);
       
       if (pendingSwapsError) throw pendingSwapsError;
       setPendingSwaps(pendingSwapsData || []);
