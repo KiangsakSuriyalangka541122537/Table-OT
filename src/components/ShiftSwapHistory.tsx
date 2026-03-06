@@ -77,6 +77,16 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
     return format(new Date(dateStr), 'd MMM', { locale: th });
   };
 
+  const getShiftLabel = (type: string) => {
+    switch (type) {
+      case 'M': return 'เช้า';
+      case 'A': return 'บ่าย';
+      case 'N': return 'ดึก';
+      case 'O': return 'หยุด';
+      default: return type;
+    }
+  };
+
   if (loading) {
     return (
       <div className="mt-8 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm animate-pulse">
@@ -124,7 +134,7 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
                       item.requester_shift_type === 'A' ? "bg-orange-100 text-orange-700" :
                       item.requester_shift_type === 'N' ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-600"
                     )}>
-                      {item.requester_shift_type}
+                      {getShiftLabel(item.requester_shift_type)}
                     </span>
                     <span className="text-slate-500 text-xs shrink-0">{formatDate(item.requester_date)}</span>
                   </div>
@@ -140,7 +150,7 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
                       item.target_shift_type === 'A' ? "bg-orange-100 text-orange-700" :
                       item.target_shift_type === 'N' ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-600"
                     )}>
-                      {item.target_shift_type}
+                      {getShiftLabel(item.target_shift_type)}
                     </span>
                     <span className="text-slate-500 text-xs shrink-0">{formatDate(item.target_date)}</span>
                   </div>
