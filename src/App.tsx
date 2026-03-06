@@ -372,14 +372,6 @@ export default function App() {
           if (newShiftType === 'A') {
              const nextDay = format(addDays(new Date(dateStr), 1), 'yyyy-MM-dd');
              // Check if next day already has a night shift by someone else (Rule: Only one N per day)
-             // Wait, is "Only one N per day" a rule? The code had:
-             // const otherNight = shifts.find(s => s.date === nextDay && s.shift_type === 'N' && s.staff_id !== staffId);
-             // This implies only one person can be on Night shift?
-             // Or maybe it meant "This staff already has N"?
-             // The variable name `otherNight` and `s.staff_id !== staffId` suggests checking if SOMEONE ELSE has N.
-             // If so, we can't add A (which implies N next day).
-             
-             // Let's keep this check if it was important.
              const otherNight = shifts.find(s => s.date === nextDay && s.shift_type === 'N' && s.staff_id !== staffId);
              if (otherNight) {
                if (!confirm(`วันที่ ${nextDay} มีผู้ลงเวรดึกแล้ว (${otherNight.staff_id}) คุณต้องการลงเวรบ่ายโดยไม่ลงเวรดึกวันถัดไปหรือไม่?`)) {
