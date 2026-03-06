@@ -163,7 +163,7 @@ export function Grid({
                         isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50",
                         isSelectedRequester && "ring-2 ring-emerald-500 ring-inset bg-emerald-50",
                         isSelectedTarget && "ring-2 ring-amber-500 ring-inset bg-amber-50",
-                        isPendingSwap && "bg-yellow-50/80 ring-2 ring-yellow-400/50 ring-inset"
+                        isPendingSwap && "bg-yellow-100 ring-2 ring-yellow-500 ring-inset z-10"
                       )}
                     >
                       {shiftType ? (
@@ -173,7 +173,7 @@ export function Grid({
                           isSelectedForMove && "ring-2 ring-indigo-500 ring-offset-1",
                           isSelectedRequester && "ring-2 ring-emerald-500 ring-offset-1",
                           isSelectedTarget && "ring-2 ring-amber-500 ring-offset-1",
-                          isPendingSwap && "opacity-60 ring-2 ring-yellow-400 ring-offset-1"
+                          isPendingSwap && "opacity-80 ring-2 ring-yellow-500 ring-offset-1 shadow-md shadow-yellow-200"
                         )}>
                           {shiftLabels[shiftType]}
                         </div>
