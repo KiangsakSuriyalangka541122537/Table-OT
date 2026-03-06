@@ -105,50 +105,49 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
         <h3 className="font-bold text-slate-800">ประวัติการแลกเวร (เดือน{format(currentMonth, 'MMMM', { locale: th })})</h3>
       </div>
       
-      <div className="divide-y divide-slate-100">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
         {history.length === 0 ? (
-           <div className="p-8 text-center text-slate-400 text-sm">
+           <div className="col-span-full p-8 text-center text-slate-400 text-sm">
              ยังไม่มีประวัติการแลกเวรในเดือนนี้
            </div>
         ) : (
           history.map((item) => (
-            <div key={item.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+            <div key={item.id} className="p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm w-full">
                   {/* Requester Side */}
-                  <div className="flex items-center gap-2 bg-slate-100/50 px-3 py-1.5 rounded-lg border border-slate-200/50">
-                    <span className="font-bold text-slate-700">{getStaffName(item.requester_staff_id)}</span>
+                  <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex-1 min-w-0">
+                    <span className="font-bold text-slate-700 truncate">{getStaffName(item.requester_staff_id)}</span>
                     <span className={clsx(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
                       item.requester_shift_type === 'M' ? "bg-blue-100 text-blue-700" :
                       item.requester_shift_type === 'A' ? "bg-orange-100 text-orange-700" :
                       item.requester_shift_type === 'N' ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-600"
                     )}>
                       {item.requester_shift_type}
                     </span>
-                    <span className="text-slate-500 text-xs">{formatDate(item.requester_date)}</span>
+                    <span className="text-slate-500 text-xs shrink-0">{formatDate(item.requester_date)}</span>
                   </div>
 
-                  <ArrowRightLeft className="w-4 h-4 text-slate-400 hidden sm:block" />
-                  <div className="w-px h-4 bg-slate-300 sm:hidden mx-auto"></div>
-
+                  <ArrowRightLeft className="w-4 h-4 text-slate-300 hidden sm:block shrink-0" />
+                  
                   {/* Target Side */}
-                  <div className="flex items-center gap-2 bg-slate-100/50 px-3 py-1.5 rounded-lg border border-slate-200/50">
-                    <span className="font-bold text-slate-700">{getStaffName(item.target_staff_id)}</span>
+                  <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex-1 min-w-0">
+                    <span className="font-bold text-slate-700 truncate">{getStaffName(item.target_staff_id)}</span>
                     <span className={clsx(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
                       item.target_shift_type === 'M' ? "bg-blue-100 text-blue-700" :
                       item.target_shift_type === 'A' ? "bg-orange-100 text-orange-700" :
                       item.target_shift_type === 'N' ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-600"
                     )}>
                       {item.target_shift_type}
                     </span>
-                    <span className="text-slate-500 text-xs">{formatDate(item.target_date)}</span>
+                    <span className="text-slate-500 text-xs shrink-0">{formatDate(item.target_date)}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-400 whitespace-nowrap ml-auto">
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 whitespace-nowrap ml-auto sm:ml-0 shrink-0">
                 <Clock className="w-3 h-3" />
                 <span>{format(new Date(item.updated_at), 'd MMM HH:mm', { locale: th })}</span>
               </div>
