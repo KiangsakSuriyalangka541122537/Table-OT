@@ -58,8 +58,8 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       // 1. Swap Logic
       if (request.requester_shift_id && request.target_shift_id) {
         // Case A: Swapping two existing shifts
-        // To avoid unique constraint violations (staff_id, date), we use a temporary staff_id (e.g., '00000000-0000-0000-0000-000000000000' or just a temporary date)
-        // Let's use a temporary date '2000-01-01' for the requester's shift first.
+        // We only need to swap the staff_id of the two shifts.
+        // To avoid unique constraint violations during the intermediate step, use a temporary date.
         
         // 1. Move requester's shift to a temp date
         const { error: errorTemp } = await supabase.from('shifts').update({
@@ -68,18 +68,21 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         
         if (errorTemp) throw new Error(`Failed to move requester shift to temp: ${errorTemp.message}`);
 
-        // 2. Move target's shift to requester's original slot
+        // 2. Update target's shift to belong to requester (keep target's date)
         const { error: error2 } = await supabase.from('shifts').update({
-          staff_id: request.requester_staff_id,
-          date: request.requester_date
+          staff_id: request.requester_staff_id
         }).eq('id', request.target_shift_id);
 
-        if (error2) throw new Error(`Failed to update target shift: ${error2.message}`);
+        if (error2) {
+          // Rollback
+          await supabase.from('shifts').update({ date: request.requester_date }).eq('id', request.requester_shift_id);
+          throw new Error(`Failed to update target shift: ${error2.message}`);
+        }
 
-        // 3. Move requester's shift from temp to target's original slot
+        // 3. Update requester's shift to belong to target, and restore its original date
         const { error: error1 } = await supabase.from('shifts').update({
           staff_id: request.target_staff_id,
-          date: request.target_date
+          date: request.requester_date
         }).eq('id', request.requester_shift_id);
         
         if (error1) throw new Error(`Failed to update requester shift: ${error1.message}`);
