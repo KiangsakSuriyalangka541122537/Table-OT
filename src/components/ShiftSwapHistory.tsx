@@ -105,7 +105,7 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
         <h3 className="font-bold text-slate-800">ประวัติการแลกเวร (เดือน{format(currentMonth, 'MMMM', { locale: th })})</h3>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-4 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-24 gap-y-6 p-8">
         {history.length === 0 ? (
            <div className="col-span-full p-8 text-center text-slate-400 text-sm">
              ยังไม่มีประวัติการแลกเวรในเดือนนี้
