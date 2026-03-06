@@ -50,7 +50,7 @@ export function Grid({
   pendingSwaps = [],
   approvedSwaps = []
 }: GridProps) {
-  const [hoveredSwapId, setHoveredSwapId] = React.useState<string | null>(null);
+  const [hoveredSwapIds, setHoveredSwapIds] = React.useState<string[]>([]);
   const daysInMonth = getDaysInMonth(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1);
@@ -147,15 +147,21 @@ export function Grid({
                     (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
                     (s.target_staff_id === staff.id && s.target_date === dateStr)
                   );
-                  const isHoveredSwap = hoveredSwapId === approvedSwap?.id;
+                  const isHoveredSwap = approvedSwap && hoveredSwapIds.includes(approvedSwap.id);
 
                   return (
                     <td
                       key={dateStr}
                       onMouseEnter={() => {
-                        if (approvedSwap) setHoveredSwapId(approvedSwap.id);
+                        if (approvedSwap) {
+                          // Find ALL approved swaps for this staff member to show full history
+                          const staffSwaps = approvedSwaps.filter(s => 
+                            s.requester_staff_id === staff.id || s.target_staff_id === staff.id
+                          );
+                          setHoveredSwapIds(staffSwaps.map(s => s.id));
+                        }
                       }}
-                      onMouseLeave={() => setHoveredSwapId(null)}
+                      onMouseLeave={() => setHoveredSwapIds([])}
                       onClick={() => {
                         const staffObj = staffList.find(s => s.id === staff.id);
                         const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
