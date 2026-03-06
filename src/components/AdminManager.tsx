@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, Trash2, Plus, Edit2, User as UserIcon, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { User, Staff } from '../types';
-import { ShiftSwapRequestsManager } from './ShiftSwapRequestsManager';
 
 interface AdminManagerProps {
   isOpen: boolean;
@@ -290,15 +289,6 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
               )}
             </tbody>
           </table>
-        </div>
-
-        {/* Shift Swap Requests Management Section */}
-        <div className="mt-6 shrink-0 max-h-[350px] overflow-y-auto rounded-xl border border-gray-200 shadow-sm">
-          <ShiftSwapRequestsManager
-            allStaff={staffList}
-            allShifts={[]}
-            onUpdate={onStaffUpdate}
-          />
         </div>
       </div>
     </div>
