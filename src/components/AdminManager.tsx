@@ -13,7 +13,6 @@ interface AdminManagerProps {
 
 export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: AdminManagerProps) {
   const [newStaffName, setNewStaffName] = useState('');
-  const [newStaffPhone, setNewStaffPhone] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -92,7 +91,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
       // 1. Create Staff
       const { data: staffData, error: staffError } = await supabase
         .from('staff')
-        .insert([{ name: newStaffName, phone: newStaffPhone }])
+        .insert([{ name: newStaffName }])
         .select()
         .single();
 
@@ -111,7 +110,6 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
       if (userError) throw userError;
 
       setNewStaffName('');
-      setNewStaffPhone('');
       setUsername('');
       setPassword('');
       setIsAdmin(false);
@@ -197,21 +195,14 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
             <Plus className="w-4 h-4 mr-2" /> เพิ่มบุคลากรใหม่
           </h3>
           <form onSubmit={handleAddStaff} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div>
               <input
                 type="text"
                 placeholder="ชื่อ-นามสกุล"
                 value={newStaffName}
                 onChange={(e) => setNewStaffName(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 required
-              />
-              <input
-                type="text"
-                placeholder="เบอร์โทรศัพท์"
-                value={newStaffPhone}
-                onChange={(e) => setNewStaffPhone(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -258,7 +249,6 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
             <thead className="bg-gray-50 sticky top-0">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อ</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เบอร์โทรศัพท์</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">การดำเนินการ</th>
               </tr>
             </thead>
@@ -279,7 +269,6 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
                       {staff.name}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{staff.phone || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleDeleteStaff(staff.id, staff.name)}
@@ -294,7 +283,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
               ))}
               {staffList.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={2} className="px-6 py-8 text-center text-gray-500">
                     ไม่พบพนักงาน เพิ่มพนักงานใหม่ด้านบน
                   </td>
                 </tr>
