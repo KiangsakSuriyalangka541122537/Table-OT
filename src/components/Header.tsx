@@ -17,6 +17,7 @@ interface HeaderProps {
   onStatsClick: () => void;
   isPublished: boolean;
   onPublishToggle: () => void;
+  onResetMonth: () => void;
   allStaff: Staff[];
   allShifts: Shift[];
   onUpdate: () => void;
@@ -34,6 +35,7 @@ export function Header({
   onStatsClick,
   isPublished,
   onPublishToggle,
+  onResetMonth,
   allStaff,
   allShifts,
   onUpdate
@@ -104,6 +106,13 @@ export function Header({
 
             {isAdmin && (
               <div className="flex items-center space-x-2 border-l pl-3 border-slate-200">
+                <button
+                  onClick={onResetMonth}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                  title="ล้างข้อมูลตารางเวรเดือนนี้"
+                >
+                  ล้างข้อมูล
+                </button>
                 <button
                   onClick={onPublishToggle}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm ${

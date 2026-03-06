@@ -485,6 +485,52 @@ export default function App() {
     }
   };
 
+  const handleResetMonth = async () => {
+    if (!isAdmin) return;
+    
+    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลตารางเวรทั้งหมดในเดือน ${format(currentMonth, 'MMMM yyyy', { locale: th })}?\n\nการกระทำนี้จะลบเวรทั้งหมดในเดือนนี้และเปลี่ยนสถานะกลับเป็นโหมดร่าง (Draft Mode) และไม่สามารถกู้คืนได้`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const startDate = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1), 'yyyy-MM-dd');
+      const endDate = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0), 'yyyy-MM-dd');
+      
+      // 1. Delete all shifts for the current month
+      const { error: deleteError } = await supabase
+        .from('shifts')
+        .delete()
+        .gte('date', startDate)
+        .lte('date', endDate);
+        
+      if (deleteError) throw deleteError;
+
+      // 2. Set roster status to Draft (is_published: false)
+      const { error: statusError } = await supabase.from('roster_status').upsert({
+        month_key: monthKey,
+        is_published: false,
+        original_assignments: null
+      });
+
+      if (statusError) throw statusError;
+
+      // 3. Log action
+      await supabase.from('logs').insert({
+        message: `Admin reset all shifts for ${monthKey}`,
+        action_type: 'ROSTER_RESET'
+      });
+
+      alert('ล้างข้อมูลตารางเวรเรียบร้อยแล้ว');
+      await fetchData();
+    } catch (error) {
+      console.error('Error resetting month:', error);
+      alert('เกิดข้อผิดพลาดในการล้างข้อมูล');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleExportPDF = async () => {
     if (!pdfRef.current) {
       alert('ไม่พบข้อมูลสำหรับสร้าง PDF');
@@ -550,6 +596,7 @@ export default function App() {
         onStatsClick={() => setIsStatsOpen(true)}
         isPublished={rosterStatus?.is_published || false}
         onPublishToggle={handlePublishToggle}
+        onResetMonth={handleResetMonth}
         allStaff={staffList}
         allShifts={shifts}
         onUpdate={fetchData}
