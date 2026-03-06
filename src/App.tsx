@@ -200,7 +200,9 @@ export default function App() {
   };
 
   const handleRequestShiftSwap = (staff: Staff, dateStr: string, shift: Shift | null) => {
-    if (isAdmin) return; // Admins use edit modal
+    // If admin and NOT published, they use edit modal (handled in Grid)
+    // If admin AND published, they should be able to swap like a user
+    if (isAdmin && !rosterStatus?.is_published) return; 
     
     const currentUserStaff = staffList.find(s => s.name === user?.name);
     if (!currentUserStaff) {
@@ -532,7 +534,7 @@ export default function App() {
               </div>
             )}
 
-            {!isAdmin && (shiftToSwap || targetShiftToSwap) && (
+            {(shiftToSwap || targetShiftToSwap) && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">

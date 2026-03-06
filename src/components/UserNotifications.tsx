@@ -31,6 +31,9 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const notificationRef = React.useRef<HTMLDivElement>(null);
 
   const currentUserStaff = allStaff.find(s => s.name === user.name);
+  // If admin, they might want to see all requests? 
+  // But the requirement says "swap shifts like others", so they act as a user.
+  // So we only show requests targeting them.
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
