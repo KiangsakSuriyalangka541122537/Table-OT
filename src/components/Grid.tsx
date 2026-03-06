@@ -18,6 +18,7 @@ interface GridProps {
   shiftToSwap?: Shift | null;
   targetShiftToSwap?: Shift | null;
   pendingSwaps?: ShiftSwapRequest[];
+  approvedSwaps?: ShiftSwapRequest[];
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -46,8 +47,10 @@ export function Grid({
   selectedShiftForMove,
   shiftToSwap,
   targetShiftToSwap,
-  pendingSwaps = []
+  pendingSwaps = [],
+  approvedSwaps = []
 }: GridProps) {
+  const [hoveredSwapId, setHoveredSwapId] = React.useState<string | null>(null);
   const daysInMonth = getDaysInMonth(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1);
@@ -139,9 +142,20 @@ export function Grid({
                   );
                   const isPendingSwap = !!pendingSwap;
 
+                  // Check for approved swaps
+                  const approvedSwap = approvedSwaps.find(s => 
+                    (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
+                    (s.target_staff_id === staff.id && s.target_date === dateStr)
+                  );
+                  const isHoveredSwap = hoveredSwapId === approvedSwap?.id;
+
                   return (
                     <td
                       key={dateStr}
+                      onMouseEnter={() => {
+                        if (approvedSwap) setHoveredSwapId(approvedSwap.id);
+                      }}
+                      onMouseLeave={() => setHoveredSwapId(null)}
                       onClick={() => {
                         const staffObj = staffList.find(s => s.id === staff.id);
                         const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
@@ -163,7 +177,8 @@ export function Grid({
                         isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50",
                         isSelectedRequester && "ring-2 ring-emerald-500 ring-inset bg-emerald-50",
                         isSelectedTarget && "ring-2 ring-amber-500 ring-inset bg-amber-50",
-                        isPendingSwap && "bg-yellow-200 ring-2 ring-yellow-500 ring-inset z-10 shadow-lg shadow-yellow-100"
+                        isPendingSwap && "bg-yellow-200 ring-2 ring-yellow-500 ring-inset z-10 shadow-lg shadow-yellow-100",
+                        isHoveredSwap && "bg-blue-100 ring-2 ring-blue-500 ring-inset z-20 shadow-lg shadow-blue-200"
                       )}
                     >
                       {shiftType ? (
@@ -173,17 +188,21 @@ export function Grid({
                           isSelectedForMove && "ring-2 ring-indigo-500 ring-offset-1",
                           isSelectedRequester && "ring-2 ring-emerald-500 ring-offset-1",
                           isSelectedTarget && "ring-2 ring-amber-500 ring-offset-1",
-                          isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-offset-1 shadow-md shadow-yellow-200 font-extrabold"
+                          isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-offset-1 shadow-md shadow-yellow-200 font-extrabold",
+                          isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-offset-1 shadow-md shadow-blue-200 font-extrabold"
                         )}>
                           {shiftLabels[shiftType]}
                         </div>
                       ) : (
                         <div className={clsx(
                           "w-full h-7 flex items-center justify-center text-slate-200 hover:text-slate-300 transition-colors",
-                          isPendingSwap && "text-yellow-600 font-bold bg-yellow-50/50 rounded-md ring-1 ring-yellow-300"
+                          isPendingSwap && "text-yellow-600 font-bold bg-yellow-50/50 rounded-md ring-1 ring-yellow-300",
+                          isHoveredSwap && "text-blue-600 font-bold bg-blue-50/50 rounded-md ring-1 ring-blue-300"
                         )}>
                           {isPendingSwap ? (
                             <span className="text-[8px] text-yellow-700">รอแลก</span>
+                          ) : isHoveredSwap ? (
+                            <span className="text-[8px] text-blue-700">แลกแล้ว</span>
                           ) : (
                             <div className="w-1 h-1 rounded-full bg-current"></div>
                           )}

@@ -25,6 +25,7 @@ export default function App() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [rosterStatus, setRosterStatus] = useState<RosterStatus | null>(null);
   const [pendingSwaps, setPendingSwaps] = useState<ShiftSwapRequest[]>([]);
+  const [approvedSwaps, setApprovedSwaps] = useState<ShiftSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals state
@@ -154,6 +155,15 @@ export default function App() {
       
       if (pendingSwapsError) throw pendingSwapsError;
       setPendingSwaps(pendingSwapsData || []);
+
+      // Fetch Approved Swaps
+      const { data: approvedSwapsData, error: approvedSwapsError } = await supabase
+        .from('shift_swap_requests')
+        .select('*')
+        .eq('status', ShiftSwapStatus.APPROVED);
+      
+      if (approvedSwapsError) throw approvedSwapsError;
+      setApprovedSwaps(approvedSwapsData || []);
       
       setLastActionTimestamp(Date.now());
     } catch (error) {
@@ -614,6 +624,7 @@ export default function App() {
                   shiftToSwap={shiftToSwap}
                   targetShiftToSwap={targetShiftToSwap}
                   pendingSwaps={pendingSwaps}
+                  approvedSwaps={approvedSwaps}
                 />
                 
                 <ShiftSwapHistory 
