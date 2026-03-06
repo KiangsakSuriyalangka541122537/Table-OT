@@ -244,7 +244,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
           </form>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto border border-gray-200 rounded-xl">
+        <div className="flex-1 min-h-[250px] overflow-y-auto border border-gray-200 rounded-xl shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0">
               <tr>
@@ -293,7 +293,7 @@ export function AdminManager({ isOpen, onClose, staffList, onStaffUpdate }: Admi
         </div>
 
         {/* Shift Swap Requests Management Section */}
-        <div className="mt-8">
+        <div className="mt-6 shrink-0 max-h-[350px] overflow-y-auto rounded-xl border border-gray-200 shadow-sm">
           <ShiftSwapRequestsManager
             allStaff={staffList}
             allShifts={[]}
