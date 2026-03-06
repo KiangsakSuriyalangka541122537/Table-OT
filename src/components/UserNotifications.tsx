@@ -104,6 +104,42 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       if (request.requester_shift_id && request.target_shift_id) {
         // Case A: Swapping two existing shifts
         
+        // Helper to find paired shift ID
+        const getPairedShiftId = async (shiftId: string) => {
+          const { data: shift } = await supabase.from('shifts').select('*').eq('id', shiftId).single();
+          if (!shift) return null;
+          
+          let pairedDate = '';
+          let pairedType = '';
+          
+          if (shift.shift_type === 'A') {
+            const d = new Date(shift.date);
+            d.setDate(d.getDate() + 1);
+            pairedDate = d.toISOString().split('T')[0];
+            pairedType = 'N';
+          } else if (shift.shift_type === 'N') {
+            const d = new Date(shift.date);
+            d.setDate(d.getDate() - 1);
+            pairedDate = d.toISOString().split('T')[0];
+            pairedType = 'A';
+          } else {
+            return null;
+          }
+
+          const { data: pairedShift } = await supabase
+            .from('shifts')
+            .select('id')
+            .eq('staff_id', shift.staff_id)
+            .eq('date', pairedDate)
+            .eq('shift_type', pairedType)
+            .single();
+            
+          return pairedShift?.id || null;
+        };
+
+        const requesterPairedId = await getPairedShiftId(request.requester_shift_id);
+        const targetPairedId = await getPairedShiftId(request.target_shift_id);
+
         // Update Requester's Shift -> Assign to Target Staff
         const { error: error1 } = await supabase.from('shifts').update({
           staff_id: request.target_staff_id
@@ -111,12 +147,24 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
         
         if (error1) throw new Error(`Failed to update requester shift: ${error1.message}`);
 
+        if (requesterPairedId) {
+           await supabase.from('shifts').update({
+            staff_id: request.target_staff_id
+          }).eq('id', requesterPairedId);
+        }
+
         // Update Target's Shift -> Assign to Requester Staff
         const { error: error2 } = await supabase.from('shifts').update({
           staff_id: request.requester_staff_id
         }).eq('id', request.target_shift_id);
 
         if (error2) throw new Error(`Failed to update target shift: ${error2.message}`);
+
+        if (targetPairedId) {
+          await supabase.from('shifts').update({
+           staff_id: request.requester_staff_id
+         }).eq('id', targetPairedId);
+       }
 
       } else if (request.requester_shift_id && !request.target_shift_id) {
         // Case B: Moving Requester's Shift to an Empty Slot (Target)
@@ -127,6 +175,51 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
         }).eq('id', request.requester_shift_id);
 
         if (error3) throw new Error(`Failed to move shift: ${error3.message}`);
+
+        // Handle Paired Shift for Case B
+        const { data: shift } = await supabase.from('shifts').select('*').eq('id', request.requester_shift_id).single();
+        if (shift) {
+          let pairedDate = '';
+          let pairedType = '';
+          let targetPairedDate = ''; // Where the paired shift should move to
+
+          if (shift.shift_type === 'A') {
+            const d = new Date(shift.date);
+            d.setDate(d.getDate() + 1);
+            pairedDate = d.toISOString().split('T')[0];
+            pairedType = 'N';
+
+            const td = new Date(request.target_date);
+            td.setDate(td.getDate() + 1);
+            targetPairedDate = td.toISOString().split('T')[0];
+          } else if (shift.shift_type === 'N') {
+            const d = new Date(shift.date);
+            d.setDate(d.getDate() - 1);
+            pairedDate = d.toISOString().split('T')[0];
+            pairedType = 'A';
+
+            const td = new Date(request.target_date);
+            td.setDate(td.getDate() - 1);
+            targetPairedDate = td.toISOString().split('T')[0];
+          }
+
+          if (pairedDate) {
+             const { data: pairedShift } = await supabase
+              .from('shifts')
+              .select('id')
+              .eq('staff_id', request.requester_staff_id) // Still belongs to requester before move
+              .eq('date', pairedDate)
+              .eq('shift_type', pairedType)
+              .single();
+            
+            if (pairedShift) {
+              await supabase.from('shifts').update({
+                staff_id: request.target_staff_id,
+                date: targetPairedDate
+              }).eq('id', pairedShift.id);
+            }
+          }
+        }
       }
 
       // 2. Update request status to APPROVED directly

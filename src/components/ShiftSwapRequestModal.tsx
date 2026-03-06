@@ -100,7 +100,27 @@ export function ShiftSwapRequestModal({
     }
   };
 
+  // Helper to find paired shift
+  const getPairedShift = (shift: Shift | undefined, shifts: Shift[]) => {
+    if (!shift) return null;
+    if (shift.shift_type === 'A') {
+      const nextDay = new Date(shift.date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayStr = format(nextDay, 'yyyy-MM-dd');
+      return shifts.find(s => s.staff_id === shift.staff_id && s.date === nextDayStr && s.shift_type === 'N');
+    }
+    if (shift.shift_type === 'N') {
+      const prevDay = new Date(shift.date);
+      prevDay.setDate(prevDay.getDate() - 1);
+      const prevDayStr = format(prevDay, 'yyyy-MM-dd');
+      return shifts.find(s => s.staff_id === shift.staff_id && s.date === prevDayStr && s.shift_type === 'A');
+    }
+    return null;
+  };
+
   const selectedRequesterShift = allShifts.find(s => s.id === requesterShiftId);
+  const requesterPairedShift = getPairedShift(selectedRequesterShift, allShifts);
+
   let selectedTargetShift = allShifts.find(s => s.id === targetShiftId);
   
   // Handle virtual shift for display
@@ -113,6 +133,8 @@ export function ShiftSwapRequestModal({
       shift_type: 'O'
     };
   }
+  const targetPairedShift = getPairedShift(selectedTargetShift, allShifts);
+
   const selectedTargetStaff = allStaff.find(s => s.id === targetStaffId);
 
   return (
@@ -150,6 +172,11 @@ export function ShiftSwapRequestModal({
                   </div>
                   <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของคุณ</p>
                   <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
+                  {requesterPairedShift && (
+                    <p className="text-[10px] text-emerald-600 mt-1">
+                      + {requesterPairedShift.shift_type} ({format(new Date(requesterPairedShift.date), 'dd/MM')})
+                    </p>
+                  )}
                 </div>
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-200">
@@ -166,6 +193,11 @@ export function ShiftSwapRequestModal({
                   <p className="font-bold text-emerald-900 text-sm">
                     {selectedTargetShift.id.startsWith('empty-') ? 'ช่องว่าง' : format(new Date(selectedTargetShift.date), 'dd/MM')}
                   </p>
+                  {targetPairedShift && (
+                    <p className="text-[10px] text-emerald-600 mt-1">
+                      + {targetPairedShift.shift_type} ({format(new Date(targetPairedShift.date), 'dd/MM')})
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
