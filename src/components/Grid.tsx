@@ -17,6 +17,7 @@ interface GridProps {
   selectedShiftForMove?: { staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null;
   shiftToSwap?: Shift | null;
   targetShiftToSwap?: Shift | null;
+  pendingSwaps?: ShiftSwapRequest[];
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -44,7 +45,8 @@ export function Grid({
   onShiftSwapRequest, 
   selectedShiftForMove,
   shiftToSwap,
-  targetShiftToSwap
+  targetShiftToSwap,
+  pendingSwaps = []
 }: GridProps) {
   const daysInMonth = getDaysInMonth(currentMonth);
   const days = Array.from({ length: daysInMonth }, (_, i) => {
@@ -130,6 +132,13 @@ export function Grid({
                   const isSelectedRequester = shiftToSwap?.staff_id === staff.id && shiftToSwap?.date === dateStr;
                   const isSelectedTarget = targetShiftToSwap?.staff_id === staff.id && targetShiftToSwap?.date === dateStr;
 
+                  // Check for pending swaps
+                  const pendingSwap = pendingSwaps.find(s => 
+                    (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
+                    (s.target_staff_id === staff.id && s.target_date === dateStr)
+                  );
+                  const isPendingSwap = !!pendingSwap;
+
                   return (
                     <td
                       key={dateStr}
@@ -153,7 +162,8 @@ export function Grid({
                         isWknd && !shiftType && "bg-rose-50/20",
                         isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50",
                         isSelectedRequester && "ring-2 ring-emerald-500 ring-inset bg-emerald-50",
-                        isSelectedTarget && "ring-2 ring-amber-500 ring-inset bg-amber-50"
+                        isSelectedTarget && "ring-2 ring-amber-500 ring-inset bg-amber-50",
+                        isPendingSwap && "bg-yellow-50/80 ring-2 ring-yellow-400/50 ring-inset"
                       )}
                     >
                       {shiftType ? (
@@ -162,7 +172,8 @@ export function Grid({
                           shiftColors[shiftType],
                           isSelectedForMove && "ring-2 ring-indigo-500 ring-offset-1",
                           isSelectedRequester && "ring-2 ring-emerald-500 ring-offset-1",
-                          isSelectedTarget && "ring-2 ring-amber-500 ring-offset-1"
+                          isSelectedTarget && "ring-2 ring-amber-500 ring-offset-1",
+                          isPendingSwap && "opacity-60 ring-2 ring-yellow-400 ring-offset-1"
                         )}>
                           {shiftLabels[shiftType]}
                         </div>

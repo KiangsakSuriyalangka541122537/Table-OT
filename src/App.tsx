@@ -24,6 +24,7 @@ export default function App() {
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [rosterStatus, setRosterStatus] = useState<RosterStatus | null>(null);
+  const [pendingSwaps, setPendingSwaps] = useState<ShiftSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals state
@@ -144,6 +145,15 @@ export default function App() {
         throw statusError;
       }
       setRosterStatus(statusData || { month_key: monthKey, is_published: false, original_assignments: null });
+
+      // Fetch Pending Swaps
+      const { data: pendingSwapsData, error: pendingSwapsError } = await supabase
+        .from('shift_swap_requests')
+        .select('*')
+        .eq('status', ShiftSwapStatus.PENDING);
+      
+      if (pendingSwapsError) throw pendingSwapsError;
+      setPendingSwaps(pendingSwapsData || []);
       
       setLastActionTimestamp(Date.now());
     } catch (error) {
@@ -603,6 +613,7 @@ export default function App() {
                   selectedShiftForMove={selectedShiftForMove}
                   shiftToSwap={shiftToSwap}
                   targetShiftToSwap={targetShiftToSwap}
+                  pendingSwaps={pendingSwaps}
                 />
                 
                 <ShiftSwapHistory 
