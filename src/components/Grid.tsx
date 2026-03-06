@@ -12,7 +12,7 @@ interface GridProps {
   isAdmin: boolean;
   isPublished: boolean;
   user: User | null;
-  onCellClick: (staffId: string, date: string, currentShift: ShiftType | undefined) => void;
+  onCellClick: (staffId: string, date: string, currentShifts: ShiftType[]) => void;
   onShiftSwapRequest: (staff: Staff, dateStr: string, shift: Shift | null) => void;
   selectedShiftForMove?: { staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null;
   shiftToSwap?: Shift | null;
@@ -57,9 +57,9 @@ export function Grid({
     return date;
   });
 
-  const getShiftForStaffAndDate = (staffId: string, dateStr: string): ShiftType | undefined => {
-    const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
-    return shift?.shift_type;
+  const getShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
+    const staffShifts = shifts.filter(s => s.staff_id === staffId && s.date === dateStr);
+    return staffShifts.map(s => s.shift_type);
   };
 
   return (
@@ -128,7 +128,7 @@ export function Grid({
                 </td>
                 {days.map((day) => {
                   const dateStr = format(day, 'yyyy-MM-dd');
-                  const shiftType = getShiftForStaffAndDate(staff.id, dateStr);
+                  const currentShifts = getShiftsForStaffAndDate(staff.id, dateStr);
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
                   const isSelectedForMove = selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
@@ -176,7 +176,7 @@ export function Grid({
                         
                         // If admin and NOT published, allow direct editing
                         if (isAdmin && !isPublished) {
-                          onCellClick(staff.id, dateStr, shiftType);
+                          onCellClick(staff.id, dateStr, currentShifts);
                         } 
                         // If logged in (admin or user) and published (or not admin), allow swap request
                         else if (user && staffObj) {
@@ -186,8 +186,8 @@ export function Grid({
                       className={clsx(
                         "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                         (isAdmin && !isPublished) && "hover:bg-slate-100/50",
-                        isTdy && !shiftType && "bg-indigo-50/20",
-                        isWknd && !shiftType && "bg-rose-50/20",
+                        isTdy && currentShifts.length === 0 && "bg-indigo-50/20",
+                        isWknd && currentShifts.length === 0 && "bg-rose-50/20",
                         isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50",
                         isSelectedRequester && "ring-2 ring-emerald-500 ring-inset bg-emerald-50",
                         isSelectedTarget && "ring-2 ring-amber-500 ring-inset bg-amber-50",
@@ -195,17 +195,21 @@ export function Grid({
                         isHoveredSwap && "bg-blue-100 ring-2 ring-blue-500 ring-inset z-20 shadow-lg shadow-blue-200"
                       )}
                     >
-                      {shiftType ? (
-                        <div className={clsx(
-                          "w-full h-7 flex items-center justify-center rounded-md border text-[10px] font-bold transition-transform hover:scale-105 active:scale-95",
-                          shiftColors[shiftType],
-                          isSelectedForMove && "ring-2 ring-indigo-500 ring-offset-1",
-                          isSelectedRequester && "ring-2 ring-emerald-500 ring-offset-1",
-                          isSelectedTarget && "ring-2 ring-amber-500 ring-offset-1",
-                          isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-offset-1 shadow-md shadow-yellow-200 font-extrabold",
-                          isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-offset-1 shadow-md shadow-blue-200 font-extrabold"
-                        )}>
-                          {shiftLabels[shiftType]}
+                      {currentShifts.length > 0 ? (
+                        <div className="flex flex-col gap-1 items-center justify-center min-h-[28px]">
+                          {currentShifts.map((shiftType, idx) => (
+                            <div key={`${dateStr}-${idx}`} className={clsx(
+                              "w-full h-6 flex items-center justify-center rounded-md border text-[10px] font-bold transition-transform hover:scale-105 active:scale-95",
+                              shiftColors[shiftType],
+                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-offset-1",
+                              isSelectedRequester && "ring-2 ring-emerald-500 ring-offset-1",
+                              isSelectedTarget && "ring-2 ring-amber-500 ring-offset-1",
+                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-offset-1 shadow-md shadow-yellow-200 font-extrabold",
+                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-offset-1 shadow-md shadow-blue-200 font-extrabold"
+                            )}>
+                              {shiftLabels[shiftType]}
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className={clsx(

@@ -7,7 +7,7 @@ interface ShiftEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (shiftType: ShiftType | null) => void;
-  currentShift: ShiftType | undefined;
+  currentShifts: ShiftType[];
   staffName: string;
   dateStr: string;
 }
@@ -16,10 +16,10 @@ const shiftOptions: { type: ShiftType | null; label: string; icon: React.Element
   { type: 'M', label: 'เช้า (ช)', icon: Sun, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300', desc: '08:00 - 16:00 (750.-)' },
   { type: 'A', label: 'บ่าย (บ)', icon: Sunset, color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-300', desc: '16:00 - 24:00 (+ดึกวันถัดไป 750.-)' },
   { type: 'N', label: 'ดึก (ด)', icon: Moon, color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-300', desc: '24:00 - 08:00 (+บ่ายวันก่อนหน้า 750.-)' },
-  { type: null, label: 'หยุด (O)', icon: Ban, color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300', desc: 'ไม่มีกะการทำงาน' },
+  { type: null, label: 'ลบกะนี้', icon: Ban, color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300', desc: 'ลบกะที่เลือก' },
 ];
 
-export function ShiftEditModal({ isOpen, onClose, onSave, currentShift, staffName, dateStr }: ShiftEditModalProps) {
+export function ShiftEditModal({ isOpen, onClose, onSave, currentShifts, staffName, dateStr }: ShiftEditModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -37,12 +37,21 @@ export function ShiftEditModal({ isOpen, onClose, onSave, currentShift, staffNam
           <p className="text-sm text-gray-500 mt-1">
             กำลังกำหนดกะสำหรับ <span className="font-semibold text-gray-700">{staffName}</span> ในวันที่ <span className="font-semibold text-gray-700">{dateStr}</span>
           </p>
+          {currentShifts.length > 0 && (
+            <div className="mt-2 flex gap-2">
+              <span className="text-xs text-gray-500">กะปัจจุบัน:</span>
+              {currentShifts.map((s, i) => (
+                <span key={i} className="text-xs font-bold px-2 py-0.5 rounded bg-gray-100">{s}</span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-3">
           {shiftOptions.map((option) => {
             const Icon = option.icon;
-            const isSelected = currentShift === option.type || (currentShift === undefined && option.type === null);
+            // Check if this option is already selected (exists in currentShifts)
+            const isSelected = option.type && currentShifts.includes(option.type);
 
             return (
               <button
