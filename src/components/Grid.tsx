@@ -147,18 +147,26 @@ export function Grid({
                     (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
                     (s.target_staff_id === staff.id && s.target_date === dateStr)
                   );
-                  const isHoveredSwap = approvedSwap && hoveredSwapIds.includes(approvedSwap.id);
+                  
+                  // Check if this cell is part of any currently hovered swap
+                  const isHoveredSwap = approvedSwaps.some(s => 
+                    hoveredSwapIds.includes(s.id) && (
+                      (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
+                      (s.target_staff_id === staff.id && s.target_date === dateStr)
+                    )
+                  );
 
                   return (
                     <td
                       key={dateStr}
                       onMouseEnter={() => {
-                        if (approvedSwap) {
-                          // Find ALL approved swaps for this staff member to show full history
-                          const staffSwaps = approvedSwaps.filter(s => 
-                            s.requester_staff_id === staff.id || s.target_staff_id === staff.id
-                          );
-                          setHoveredSwapIds(staffSwaps.map(s => s.id));
+                        // Find all swaps involving THIS cell
+                        const cellSwaps = approvedSwaps.filter(s => 
+                          (s.requester_staff_id === staff.id && s.requester_date === dateStr) ||
+                          (s.target_staff_id === staff.id && s.target_date === dateStr)
+                        );
+                        if (cellSwaps.length > 0) {
+                          setHoveredSwapIds(cellSwaps.map(s => s.id));
                         }
                       }}
                       onMouseLeave={() => setHoveredSwapIds([])}
