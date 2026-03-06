@@ -11,6 +11,7 @@ import { ShiftEditModal } from './components/ShiftEditModal';
 import { StatsModal } from './components/StatsModal';
 import { AdminManager } from './components/AdminManager';
 import { ShiftSwapRequestModal } from './components/ShiftSwapRequestModal';
+import { ShiftSwapHistory } from './components/ShiftSwapHistory';
 import { ExportPDFTemplate } from './components/ExportPDFTemplate';
 import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -46,6 +47,7 @@ export default function App() {
   const monthKey = format(currentMonth, 'yyyy-MM');
   const isAdmin = user?.role === 'admin';
   const pdfRef = React.useRef<HTMLDivElement>(null);
+  const [lastActionTimestamp, setLastActionTimestamp] = useState<number>(Date.now());
 
   useEffect(() => {
     const cleanupDuplicates = async () => {
@@ -142,7 +144,8 @@ export default function App() {
         throw statusError;
       }
       setRosterStatus(statusData || { month_key: monthKey, is_published: false, original_assignments: null });
-
+      
+      setLastActionTimestamp(Date.now());
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -587,19 +590,27 @@ export default function App() {
                 <p className="text-slate-400 text-sm font-medium animate-pulse">กำลังโหลดข้อมูล...</p>
               </div>
             ) : (
-              <Grid
-                currentMonth={currentMonth}
-                staffList={staffList}
-                shifts={shifts}
-                isAdmin={isAdmin}
-                isPublished={rosterStatus?.is_published ?? false}
-                user={user}
-                onCellClick={handleCellClick}
-                onShiftSwapRequest={handleRequestShiftSwap}
-                selectedShiftForMove={selectedShiftForMove}
-                shiftToSwap={shiftToSwap}
-                targetShiftToSwap={targetShiftToSwap}
-              />
+              <>
+                <Grid
+                  currentMonth={currentMonth}
+                  staffList={staffList}
+                  shifts={shifts}
+                  isAdmin={isAdmin}
+                  isPublished={rosterStatus?.is_published ?? false}
+                  user={user}
+                  onCellClick={handleCellClick}
+                  onShiftSwapRequest={handleRequestShiftSwap}
+                  selectedShiftForMove={selectedShiftForMove}
+                  shiftToSwap={shiftToSwap}
+                  targetShiftToSwap={targetShiftToSwap}
+                />
+                
+                <ShiftSwapHistory 
+                  staffList={staffList}
+                  currentMonth={currentMonth}
+                  lastUpdated={lastActionTimestamp}
+                />
+              </>
             )}
           </div>
         )}
