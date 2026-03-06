@@ -375,6 +375,13 @@ export default function App() {
 
   const handlePublishToggle = async () => {
     if (!isAdmin) return;
+    
+    // If already published, prevent un-publishing (Draft mode)
+    if (rosterStatus?.is_published) {
+      alert('ไม่สามารถเปลี่ยนกลับเป็นโหมดร่างได้เมื่อเผยแพร่แล้ว');
+      return;
+    }
+
     const newStatus = !rosterStatus?.is_published;
     
     try {
@@ -583,6 +590,7 @@ export default function App() {
                 staffList={staffList}
                 shifts={shifts}
                 isAdmin={isAdmin}
+                isPublished={rosterStatus?.is_published ?? false}
                 user={user}
                 onCellClick={handleCellClick}
                 onShiftSwapRequest={handleRequestShiftSwap}

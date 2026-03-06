@@ -10,6 +10,7 @@ interface GridProps {
   staffList: Staff[];
   shifts: Shift[];
   isAdmin: boolean;
+  isPublished: boolean;
   user: User | null;
   onCellClick: (staffId: string, date: string, currentShift: ShiftType | undefined) => void;
   onShiftSwapRequest: (staff: Staff, dateStr: string, shift: Shift | null) => void;
@@ -37,6 +38,7 @@ export function Grid({
   staffList, 
   shifts, 
   isAdmin, 
+  isPublished,
   user, 
   onCellClick, 
   onShiftSwapRequest, 
@@ -134,16 +136,19 @@ export function Grid({
                       onClick={() => {
                         const staffObj = staffList.find(s => s.id === staff.id);
                         const shiftObj = shifts.find(s => s.staff_id === staff.id && s.date === dateStr) || null;
-                        if (isAdmin) {
+                        
+                        // If admin and NOT published, allow direct editing
+                        if (isAdmin && !isPublished) {
                           onCellClick(staff.id, dateStr, shiftType);
-                        } else if (user && staffObj) {
-                          // Allow swap/move request if logged in
+                        } 
+                        // If logged in (admin or user) and published (or not admin), allow swap request
+                        else if (user && staffObj) {
                           onShiftSwapRequest(staffObj, dateStr, shiftObj);
                         }
                       }}
                       className={clsx(
                         "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
-                        isAdmin && "hover:bg-slate-100/50",
+                        (isAdmin && !isPublished) && "hover:bg-slate-100/50",
                         isTdy && !shiftType && "bg-indigo-50/20",
                         isWknd && !shiftType && "bg-rose-50/20",
                         isSelectedForMove && "ring-2 ring-indigo-500 ring-inset bg-indigo-50",
