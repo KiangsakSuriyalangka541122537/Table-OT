@@ -15,6 +15,18 @@
     to { transform: rotate(360deg); }
   }
   --animate-spin-slow: spin-slow 3s linear infinite;
+
+  @keyframes bell-swing {
+    0% { transform: rotate(0deg); }
+    10% { transform: rotate(15deg); }
+    20% { transform: rotate(-10deg); }
+    30% { transform: rotate(10deg); }
+    40% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    60% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+  }
+  --animate-bell-swing: bell-swing 1s ease-in-out infinite;
 }
 
 @layer base {

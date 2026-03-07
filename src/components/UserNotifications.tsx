@@ -330,7 +330,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
         className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
         title="การแจ้งเตือน"
       >
-        <Bell className="w-4 h-4" />
+        <Bell className={clsx("w-4 h-4", requests.length > 0 && "animate-bell-swing origin-top")} />
         {requests.length > 0 && (
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
         )}
