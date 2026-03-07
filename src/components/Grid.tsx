@@ -208,12 +208,14 @@ export function Grid({
                     >
                       {currentShifts.length > 0 ? (
                         <div className={clsx(
-                          "flex flex-col items-center justify-center min-h-[40px] w-full h-full rounded-md overflow-hidden border",
+                          "flex flex-col items-center justify-center w-full rounded-md overflow-hidden border transition-all duration-300",
+                          currentShifts.length === 1 ? "min-h-[36px]" : 
+                          currentShifts.length === 2 ? "min-h-[72px]" : "min-h-[100px]",
                           currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100" : "border-slate-200"
                         )}>
                           {currentShifts.map((shiftType, idx) => (
                             <div key={`${dateStr}-${idx}`} className={clsx(
-                              "w-full flex-1 flex items-center justify-center text-[10px] font-bold transition-transform",
+                              "w-full flex-1 flex items-center justify-center text-[11px] font-bold transition-all py-1",
                               idx > 0 && "border-t border-slate-200",
                               shiftColors[shiftType],
                               isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
