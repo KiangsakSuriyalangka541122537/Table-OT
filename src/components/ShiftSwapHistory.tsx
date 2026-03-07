@@ -100,12 +100,6 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
     );
   }
 
-  if (history.length === 0) {
-    return null; // Don't show if empty? Or show "No history"?
-    // User requested "History ... below the calendar". Better to show the container even if empty or just hide it.
-    // Let's show a placeholder if empty.
-  }
-
   return (
     <div className="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">

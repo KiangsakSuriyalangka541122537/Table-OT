@@ -544,17 +544,21 @@ export default function App() {
       if (deleteError) throw deleteError;
 
       // 1.5 Delete all swap requests for the current month (checking both requester and target dates)
-      await supabase
+      const { error: swapError1 } = await supabase
         .from('shift_swap_requests')
         .delete()
         .gte('requester_date', startDate)
         .lte('requester_date', endDate);
+      
+      if (swapError1) throw swapError1;
 
-      await supabase
+      const { error: swapError2 } = await supabase
         .from('shift_swap_requests')
         .delete()
         .gte('target_date', startDate)
         .lte('target_date', endDate);
+      
+      if (swapError2) throw swapError2;
 
       // Clear local states immediately for better UX
       setShifts([]);
