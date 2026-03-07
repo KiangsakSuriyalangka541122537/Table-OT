@@ -205,12 +205,17 @@ export default function App() {
           let action = '';
           
           if (canMerge) {
-             // If merge is possible, prioritize merge
-             if (window.confirm(`ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
+             // Auto-merge if moving 'M' into a cell that doesn't have 'M'
+             if (selectedShiftForMove.shiftType === 'M' && !targetTypes.includes('M')) {
                 action = 'merge';
              } else {
-                if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
-                   action = 'swap';
+                // If merge is possible, prioritize merge
+                if (window.confirm(`ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
+                   action = 'merge';
+                } else {
+                   if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
+                      action = 'swap';
+                   }
                 }
              }
           } else {
