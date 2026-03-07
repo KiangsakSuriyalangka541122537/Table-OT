@@ -192,34 +192,38 @@ export default function App() {
         const targetShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
 
         if (sourceShift && targetShift) {
+          // Check if merge is possible
+          const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
+          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
+          
+          // Combine unique types
+          let mergedTypes = [...targetTypes, ...sourceTypes];
+          mergedTypes = Array.from(new Set(mergedTypes));
+          
+          const canMerge = mergedTypes.length <= 2;
+          
           let action = '';
-          if (window.confirm(`ปลายทางมีเวรอยู่แล้ว ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
-            action = 'merge';
-          } else if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?\n(กด OK เพื่อสลับเวร, กด Cancel เพื่อยกเลิก)`)) {
-            action = 'swap';
+          
+          if (canMerge) {
+             // If merge is possible, prioritize merge
+             if (window.confirm(`ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
+                action = 'merge';
+             } else {
+                if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
+                   action = 'swap';
+                }
+             }
           } else {
-            setSelectedShiftForMove(null);
-            setLoading(false);
-            return;
+             // Cannot merge due to max 2 shifts constraint
+             if (window.confirm(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 2 กะ (มี ${mergedTypes.join(', ')}) ต้องการ "สลับเวร" แทนหรือไม่?`)) {
+                action = 'swap';
+             }
           }
 
           if (action === 'merge') {
-            const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
-            const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
-            
-            let newTypes = [...targetTypes, ...sourceTypes];
-            newTypes = Array.from(new Set(newTypes)); // Remove duplicates
-            
-            if (newTypes.length > 2) {
-              alert('ไม่สามารถรวมเวรได้ เนื่องจาก 1 วันสามารถมีเวรได้สูงสุด 2 กะเท่านั้น');
-              setSelectedShiftForMove(null);
-              setLoading(false);
-              return;
-            }
-            
             const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
-            newTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
-            const newShiftTypeStr = newTypes.join(',');
+            mergedTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
+            const newShiftTypeStr = mergedTypes.join(',');
 
             await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
             await supabase.from('shifts').delete().eq('id', sourceShift.id);

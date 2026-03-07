@@ -197,7 +197,10 @@ export function Grid({
                       )}
                     >
                       {currentShifts.length > 0 ? (
-                        <div className="flex flex-col items-center justify-center min-h-[28px] w-full h-full rounded-md overflow-hidden border border-slate-200">
+                        <div className={clsx(
+                          "flex flex-col items-center justify-center min-h-[28px] w-full h-full rounded-md overflow-hidden border",
+                          currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100" : "border-slate-200"
+                        )}>
                           {currentShifts.map((shiftType, idx) => (
                             <div key={`${dateStr}-${idx}`} className={clsx(
                               "w-full flex-1 flex items-center justify-center text-[10px] font-bold transition-transform",
