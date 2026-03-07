@@ -218,10 +218,11 @@ export default function App() {
         setSelectedShiftForMove(null);
       }
     } else {
-      if (currentShifts.length > 0) {
-        // If multiple shifts, maybe open edit modal directly?
-        // Or select the first one?
-        // Let's open edit modal for now to allow managing them.
+      if (currentShifts.length === 1) {
+        // Select for move/swap
+        setSelectedShiftForMove({ staffId, dateStr, shiftType: currentShifts[0] });
+      } else if (currentShifts.length > 1) {
+        // If multiple shifts, open edit modal directly
         setEditingCell({ staffId, dateStr, currentShifts });
         setIsShiftEditOpen(true);
       } else {
@@ -326,118 +327,119 @@ export default function App() {
     const { staffId, dateStr } = editingCell;
 
     try {
-      // Find current shifts for this cell
-      const currentShifts = shifts.filter(s => s.staff_id === staffId && s.date === dateStr);
-      const currentTypes = currentShifts.map(s => s.shift_type);
+      // Find current shift for this cell
+      const currentShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
+      const currentTypes = currentShift && currentShift.shift_type ? currentShift.shift_type.split(',') : [];
 
       // 1. Handle Deletion (null)
       if (newShiftType === null) {
-        // If null is selected, delete ALL shifts for this day? Or just clear?
-        // The UI says "ลบกะนี้" (Delete this shift) but doesn't specify which if multiple.
-        // Let's assume it clears the day for now, or we could make it toggle.
-        // Given the UI is simple, let's make it clear the day.
-        await supabase.from('shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
+        if (currentShift) {
+          await supabase.from('shifts').delete().eq('id', currentShift.id);
+        }
       } 
       else {
         // 2. Toggle Logic: If exists, remove. If not, add.
-        if (currentTypes.includes(newShiftType)) {
+        let newTypes = [...currentTypes];
+        if (newTypes.includes(newShiftType)) {
           // Remove specific shift
-          await supabase.from('shifts').delete()
-            .eq('staff_id', staffId)
-            .eq('date', dateStr)
-            .eq('shift_type', newShiftType);
+          newTypes = newTypes.filter(t => t !== newShiftType);
         } else {
           // Add new shift
-          // Check constraints:
-          // "1 day max 2 shifts: Morning / Afternoon+Night only"
-          // This implies:
-          // - Can have M
-          // - Can have A (and usually N next day)
-          // - Can have N (and usually A prev day)
-          // - Can have M + A
-          // - Can have M + N (rare but possible)
-          // - Can have A + N (same day? A is 16-24, N is 00-08. Usually N is 00-08 of the SAME day or NEXT day?
-          //   In this system, N usually means 00:00-08:00 of that date.
-          //   A is 16:00-24:00 of that date.
-          //   So A and N on same date means 00-08 AND 16-24. That is possible.
-          
-          // Constraint: Max 2 shifts
-          if (currentTypes.length >= 2) {
+          if (newTypes.length >= 2) {
             alert('สามารถลงเวรได้สูงสุด 2 กะต่อวันเท่านั้น');
             return;
           }
+          newTypes.push(newShiftType);
+        }
 
-          // Special logic for A and N auto-adding linked shifts
-          // If adding A, check N next day
-          if (newShiftType === 'A') {
-             const nextDay = format(addDays(new Date(dateStr), 1), 'yyyy-MM-dd');
-             // Check if next day already has a night shift by someone else (Rule: Only one N per day)
-             const otherNight = shifts.find(s => s.date === nextDay && s.shift_type === 'N' && s.staff_id !== staffId);
-             if (otherNight) {
-               if (!confirm(`วันที่ ${nextDay} มีผู้ลงเวรดึกแล้ว (${otherNight.staff_id}) คุณต้องการลงเวรบ่ายโดยไม่ลงเวรดึกวันถัดไปหรือไม่?`)) {
-                 return;
-               }
-               // If confirmed, just add A.
-               await supabase.from('shifts').insert({
-                 staff_id: staffId,
-                 date: dateStr,
-                 shift_type: 'A'
-               });
-             } else {
-               // Add A and N next day
-               // Check if N next day already exists for THIS staff
-               const myNextNight = shifts.find(s => s.date === nextDay && s.shift_type === 'N' && s.staff_id === staffId);
-               if (!myNextNight) {
-                 await supabase.from('shifts').insert([
-                   { staff_id: staffId, date: dateStr, shift_type: 'A' },
-                   { staff_id: staffId, date: nextDay, shift_type: 'N' }
-                 ]);
-               } else {
-                 // Just add A
-                 await supabase.from('shifts').insert({
-                   staff_id: staffId,
-                   date: dateStr,
-                   shift_type: 'A'
-                 });
-               }
-             }
+        // Sort the types so M is always first, then A, then N
+        const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
+        newTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
+        const newShiftTypeStr = newTypes.join(',');
+
+        if (newTypes.length === 0) {
+          if (currentShift) {
+            await supabase.from('shifts').delete().eq('id', currentShift.id);
           }
-          else if (newShiftType === 'N') {
-            // Similar logic for N -> A prev day
-            const prevDay = format(addDays(new Date(dateStr), -1), 'yyyy-MM-dd');
-            // Check if today already has a night shift by someone else
-             const otherNight = shifts.find(s => s.date === dateStr && s.shift_type === 'N' && s.staff_id !== staffId);
-             if (otherNight) {
-               alert(`ไม่สามารถลงเวรดึกได้ เนื่องจากวันนี้มีผู้ลงเวรดึกแล้ว`);
-               return;
-             }
-             
-             // Add N today. Check A prev day.
-             // Actually, adding N today usually implies A yesterday.
-             // But if we are just adding N, maybe we just add N.
-             // The original code auto-added A yesterday.
-             
-             const myPrevA = shifts.find(s => s.date === prevDay && s.shift_type === 'A' && s.staff_id === staffId);
-             if (!myPrevA) {
-                await supabase.from('shifts').insert([
-                   { staff_id: staffId, date: prevDay, shift_type: 'A' },
-                   { staff_id: staffId, date: dateStr, shift_type: 'N' }
-                 ]);
-             } else {
-                await supabase.from('shifts').insert({
-                   staff_id: staffId,
-                   date: dateStr,
-                   shift_type: 'N'
-                 });
-             }
-          }
-          else {
-            // Normal insert for M
+        } else {
+          if (currentShift) {
+            await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', currentShift.id);
+          } else {
             await supabase.from('shifts').insert({
               staff_id: staffId,
               date: dateStr,
-              shift_type: newShiftType
+              shift_type: newShiftTypeStr
             });
+          }
+
+          // Special logic for A and N auto-adding linked shifts (only if we ADDED a shift)
+          if (!currentTypes.includes(newShiftType)) {
+            if (newShiftType === 'A') {
+               const nextDay = format(addDays(new Date(dateStr), 1), 'yyyy-MM-dd');
+               const otherNight = shifts.find(s => s.date === nextDay && s.shift_type?.includes('N') && s.staff_id !== staffId);
+               if (otherNight) {
+                 if (!confirm(`วันที่ ${nextDay} มีผู้ลงเวรดึกแล้ว (${otherNight.staff_id}) คุณต้องการลงเวรบ่ายโดยไม่ลงเวรดึกวันถัดไปหรือไม่?`)) {
+                   // Rollback the A we just added if they cancel
+                   if (currentShift) {
+                     await supabase.from('shifts').update({ shift_type: currentTypes.join(',') }).eq('id', currentShift.id);
+                   } else {
+                     await supabase.from('shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
+                   }
+                   return;
+                 }
+               } else {
+                 // Check if N next day already exists for THIS staff
+                 const myNextNight = shifts.find(s => s.date === nextDay && s.staff_id === staffId);
+                 if (!myNextNight || !myNextNight.shift_type?.includes('N')) {
+                   const nextDayTypes = myNextNight && myNextNight.shift_type ? myNextNight.shift_type.split(',') : [];
+                   nextDayTypes.push('N');
+                   nextDayTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
+                   const nextDayStr = nextDayTypes.join(',');
+                   
+                   if (myNextNight) {
+                     await supabase.from('shifts').update({ shift_type: nextDayStr }).eq('id', myNextNight.id);
+                   } else {
+                     await supabase.from('shifts').insert({
+                       staff_id: staffId,
+                       date: nextDay,
+                       shift_type: 'N'
+                     });
+                   }
+                 }
+               }
+            }
+            else if (newShiftType === 'N') {
+              const prevDay = format(addDays(new Date(dateStr), -1), 'yyyy-MM-dd');
+              const otherNight = shifts.find(s => s.date === dateStr && s.shift_type?.includes('N') && s.staff_id !== staffId);
+              if (otherNight) {
+                alert(`ไม่สามารถลงเวรดึกได้ เนื่องจากวันนี้มีผู้ลงเวรดึกแล้ว`);
+                // Rollback the N we just added
+                if (currentShift) {
+                  await supabase.from('shifts').update({ shift_type: currentTypes.join(',') }).eq('id', currentShift.id);
+                } else {
+                  await supabase.from('shifts').delete().eq('staff_id', staffId).eq('date', dateStr);
+                }
+                return;
+              }
+               
+              const myPrevA = shifts.find(s => s.date === prevDay && s.staff_id === staffId);
+              if (!myPrevA || !myPrevA.shift_type?.includes('A')) {
+                const prevDayTypes = myPrevA && myPrevA.shift_type ? myPrevA.shift_type.split(',') : [];
+                prevDayTypes.push('A');
+                prevDayTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
+                const prevDayStr = prevDayTypes.join(',');
+                
+                if (myPrevA) {
+                  await supabase.from('shifts').update({ shift_type: prevDayStr }).eq('id', myPrevA.id);
+                } else {
+                  await supabase.from('shifts').insert({
+                    staff_id: staffId,
+                    date: prevDay,
+                    shift_type: 'A'
+                  });
+                }
+              }
+            }
           }
         }
       }

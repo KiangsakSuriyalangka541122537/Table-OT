@@ -112,12 +112,12 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
           let pairedDate = '';
           let pairedType = '';
           
-          if (shift.shift_type === 'A') {
+          if (shift.shift_type?.includes('A')) {
             const d = new Date(shift.date);
             d.setDate(d.getDate() + 1);
             pairedDate = d.toISOString().split('T')[0];
             pairedType = 'N';
-          } else if (shift.shift_type === 'N') {
+          } else if (shift.shift_type?.includes('N')) {
             const d = new Date(shift.date);
             d.setDate(d.getDate() - 1);
             pairedDate = d.toISOString().split('T')[0];
@@ -126,39 +126,57 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
             return null;
           }
 
-          const { data: pairedShift } = await supabase
+          const { data: pairedShifts } = await supabase
             .from('shifts')
-            .select('id')
+            .select('id, shift_type')
             .eq('staff_id', shift.staff_id)
-            .eq('date', pairedDate)
-            .eq('shift_type', pairedType)
-            .single();
+            .eq('date', pairedDate);
             
+          const pairedShift = pairedShifts?.find(s => s.shift_type?.includes(pairedType));
           return pairedShift?.id || null;
         };
 
         const requesterPairedId = await getPairedShiftId(request.requester_shift_id);
         const targetPairedId = await getPairedShiftId(request.target_shift_id);
 
-        // Update Requester's Shift -> Assign to Target Staff
+        // Use a temporary date to avoid unique constraint violations during swap
+        const TEMP_DATE = '2000-01-01';
+
+        // 1. Move requester's shift to temp date
+        const { error: errTemp1 } = await supabase.from('shifts').update({
+          date: TEMP_DATE
+        }).eq('id', request.requester_shift_id);
+        if (errTemp1) throw new Error(`Failed to move requester shift to temp: ${errTemp1.message}`);
+
+        // 2. Update Target's Shift -> Assign to Requester Staff
+        const { error: error2 } = await supabase.from('shifts').update({
+          staff_id: request.requester_staff_id
+        }).eq('id', request.target_shift_id);
+        if (error2) {
+          // Rollback
+          await supabase.from('shifts').update({ date: request.requester_date }).eq('id', request.requester_shift_id);
+          throw new Error(`Failed to update target shift: ${error2.message}`);
+        }
+
+        // 3. Update Requester's Shift (now at temp date) -> Assign to Target Staff and restore original date
         const { error: error1 } = await supabase.from('shifts').update({
-          staff_id: request.target_staff_id
+          staff_id: request.target_staff_id,
+          date: request.requester_date
         }).eq('id', request.requester_shift_id);
         
-        if (error1) throw new Error(`Failed to update requester shift: ${error1.message}`);
+        if (error1) {
+           // Rollback is complex here, but we try our best
+           await supabase.from('shifts').update({ staff_id: request.target_staff_id }).eq('id', request.target_shift_id);
+           await supabase.from('shifts').update({ date: request.requester_date }).eq('id', request.requester_shift_id);
+           throw new Error(`Failed to update requester shift: ${error1.message}`);
+        }
 
+        // Handle paired shifts (these are on different dates, so less likely to conflict, but we should be careful)
         if (requesterPairedId) {
            await supabase.from('shifts').update({
             staff_id: request.target_staff_id
           }).eq('id', requesterPairedId);
         }
-
-        // Update Target's Shift -> Assign to Requester Staff
-        const { error: error2 } = await supabase.from('shifts').update({
-          staff_id: request.requester_staff_id
-        }).eq('id', request.target_shift_id);
-
-        if (error2) throw new Error(`Failed to update target shift: ${error2.message}`);
 
         if (targetPairedId) {
           await supabase.from('shifts').update({
@@ -183,7 +201,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
           let pairedType = '';
           let targetPairedDate = ''; // Where the paired shift should move to
 
-          if (shift.shift_type === 'A') {
+          if (shift.shift_type?.includes('A')) {
             const d = new Date(shift.date);
             d.setDate(d.getDate() + 1);
             pairedDate = d.toISOString().split('T')[0];
@@ -192,7 +210,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
             const td = new Date(request.target_date);
             td.setDate(td.getDate() + 1);
             targetPairedDate = td.toISOString().split('T')[0];
-          } else if (shift.shift_type === 'N') {
+          } else if (shift.shift_type?.includes('N')) {
             const d = new Date(shift.date);
             d.setDate(d.getDate() - 1);
             pairedDate = d.toISOString().split('T')[0];
@@ -204,13 +222,13 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
           }
 
           if (pairedDate) {
-             const { data: pairedShift } = await supabase
+             const { data: pairedShifts } = await supabase
               .from('shifts')
-              .select('id')
+              .select('id, shift_type')
               .eq('staff_id', request.requester_staff_id) // Still belongs to requester before move
-              .eq('date', pairedDate)
-              .eq('shift_type', pairedType)
-              .single();
+              .eq('date', pairedDate);
+            
+            const pairedShift = pairedShifts?.find(s => s.shift_type?.includes(pairedType));
             
             if (pairedShift) {
               await supabase.from('shifts').update({
@@ -292,9 +310,15 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     return format(date, 'dd/MM');
   };
 
+  const getShiftLabel = (type: string) => {
+    if (!type) return shiftLabels['O'];
+    return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
+  };
+
   const getShiftColor = (type: string) => {
     if (!type) return shiftColors['O'];
-    return shiftColors[type as ShiftType] || shiftColors['O'];
+    const types = type.split(',');
+    return shiftColors[types[0] as ShiftType] || shiftColors['O'];
   };
 
   if (!currentUserStaff) return null;
@@ -359,13 +383,13 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="text-slate-400 uppercase font-bold">เวรของเขา:</span>
                         <span className={clsx("px-1.5 py-0.5 rounded font-bold", getShiftColor(request.requester_shift_type))}>
-                          {formatDateSafe(request.requester_date)} ({request.requester_shift_type})
+                          {formatDateSafe(request.requester_date)} ({getShiftLabel(request.requester_shift_type)})
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="text-slate-400 uppercase font-bold">เวรของคุณ:</span>
                         <span className={clsx("px-1.5 py-0.5 rounded font-bold", getShiftColor(request.target_shift_type))}>
-                          {request.target_shift_id ? formatDateSafe(request.target_date) : 'ช่องว่าง'} ({request.target_shift_type})
+                          {request.target_shift_id ? formatDateSafe(request.target_date) : 'ช่องว่าง'} ({getShiftLabel(request.target_shift_type)})
                         </span>
                       </div>
                     </div>

@@ -154,10 +154,14 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     return format(date, 'dd MMMM yyyy');
   };
 
-  const getShiftLabel = (type: string) => shiftLabels[type as ShiftType] || type;
+  const getShiftLabel = (type: string) => {
+    if (!type) return shiftLabels['O'];
+    return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
+  };
   const getShiftColor = (type: string) => {
     if (!type) return shiftColors['O'];
-    return shiftColors[type as ShiftType] || shiftColors['O'];
+    const types = type.split(',');
+    return shiftColors[types[0] as ShiftType] || shiftColors['O'];
   };
 
   return (

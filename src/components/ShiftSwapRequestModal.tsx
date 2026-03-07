@@ -103,19 +103,24 @@ export function ShiftSwapRequestModal({
   // Helper to find paired shift
   const getPairedShift = (shift: Shift | undefined, shifts: Shift[]) => {
     if (!shift) return null;
-    if (shift.shift_type === 'A') {
+    if (shift.shift_type?.includes('A')) {
       const nextDay = new Date(shift.date);
       nextDay.setDate(nextDay.getDate() + 1);
       const nextDayStr = format(nextDay, 'yyyy-MM-dd');
-      return shifts.find(s => s.staff_id === shift.staff_id && s.date === nextDayStr && s.shift_type === 'N');
+      return shifts.find(s => s.staff_id === shift.staff_id && s.date === nextDayStr && s.shift_type?.includes('N'));
     }
-    if (shift.shift_type === 'N') {
+    if (shift.shift_type?.includes('N')) {
       const prevDay = new Date(shift.date);
       prevDay.setDate(prevDay.getDate() - 1);
       const prevDayStr = format(prevDay, 'yyyy-MM-dd');
-      return shifts.find(s => s.staff_id === shift.staff_id && s.date === prevDayStr && s.shift_type === 'A');
+      return shifts.find(s => s.staff_id === shift.staff_id && s.date === prevDayStr && s.shift_type?.includes('A'));
     }
     return null;
+  };
+
+  const getShiftLabel = (type: string) => {
+    if (!type) return shiftLabels['O'];
+    return type.split(',').map(t => shiftLabels[t as ShiftType] || t).join(' + ');
   };
 
   const selectedRequesterShift = allShifts.find(s => s.id === requesterShiftId);
@@ -221,7 +226,7 @@ export function ShiftSwapRequestModal({
                   <option value="">-- เลือกกะของคุณ --</option>
                   {myShifts.map(shift => (
                     <option key={shift.id} value={shift.id}>
-                      {shiftLabels[shift.shift_type]} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
+                      {getShiftLabel(shift.shift_type)} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
                     </option>
                   ))}
                 </select>
@@ -261,7 +266,7 @@ export function ShiftSwapRequestModal({
                       .filter(shift => shift.staff_id === targetStaffId)
                       .map(shift => (
                         <option key={shift.id} value={shift.id}>
-                          {shiftLabels[shift.shift_type]} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
+                          {getShiftLabel(shift.shift_type)} ({shift.shift_type}) - {format(new Date(shift.date), 'dd/MM/yyyy')}
                         </option>
                       ))}
                   </select>

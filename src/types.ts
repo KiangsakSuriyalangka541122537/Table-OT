@@ -12,7 +12,7 @@ export interface Staff {
   avatar_url?: string;
 }
 
-export type ShiftType = 'M' | 'A' | 'N' | 'O';
+export type ShiftType = 'M' | 'A' | 'N' | 'O' | string;
 
 export interface Shift {
   id: string;

@@ -58,8 +58,9 @@ export function Grid({
   });
 
   const getShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
-    const staffShifts = shifts.filter(s => s.staff_id === staffId && s.date === dateStr);
-    return staffShifts.map(s => s.shift_type);
+    const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
+    if (!shift || !shift.shift_type) return [];
+    return shift.shift_type.split(',') as ShiftType[];
   };
 
   return (
