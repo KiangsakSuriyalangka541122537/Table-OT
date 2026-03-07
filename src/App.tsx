@@ -538,14 +538,24 @@ export default function App() {
         
       if (deleteError) throw deleteError;
 
-      // 1.5 Delete all swap requests for the current month
-      const { error: deleteSwapsError } = await supabase
+      // 1.5 Delete all swap requests for the current month (checking both requester and target dates)
+      await supabase
         .from('shift_swap_requests')
         .delete()
         .gte('requester_date', startDate)
         .lte('requester_date', endDate);
 
-      if (deleteSwapsError) throw deleteSwapsError;
+      await supabase
+        .from('shift_swap_requests')
+        .delete()
+        .gte('target_date', startDate)
+        .lte('target_date', endDate);
+
+      // Clear local states immediately for better UX
+      setShifts([]);
+      setPendingSwaps([]);
+      setApprovedSwaps([]);
+      setLastActionTimestamp(Date.now());
 
       // 2. Set roster status to Draft (is_published: false)
       const { error: statusError } = await supabase.from('roster_status').upsert({
