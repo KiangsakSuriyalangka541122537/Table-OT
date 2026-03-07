@@ -538,6 +538,15 @@ export default function App() {
         
       if (deleteError) throw deleteError;
 
+      // 1.5 Delete all swap requests for the current month
+      const { error: deleteSwapsError } = await supabase
+        .from('shift_swap_requests')
+        .delete()
+        .gte('requester_date', startDate)
+        .lte('requester_date', endDate);
+
+      if (deleteSwapsError) throw deleteSwapsError;
+
       // 2. Set roster status to Draft (is_published: false)
       const { error: statusError } = await supabase.from('roster_status').upsert({
         month_key: monthKey,
