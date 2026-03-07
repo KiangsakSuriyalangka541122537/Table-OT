@@ -22,10 +22,10 @@ interface GridProps {
 }
 
 const shiftColors: Record<ShiftType, string> = {
-  M: 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm shadow-blue-100',
-  A: 'bg-orange-50 text-orange-700 border-orange-200 shadow-sm shadow-orange-100',
-  N: 'bg-purple-50 text-purple-700 border-purple-200 shadow-sm shadow-purple-100',
-  O: 'bg-slate-50 text-slate-500 border-slate-200',
+  M: 'bg-blue-50 text-blue-700',
+  A: 'bg-orange-50 text-orange-700',
+  N: 'bg-purple-50 text-purple-700',
+  O: 'bg-slate-50 text-slate-500',
 };
 
 const shiftLabels: Record<ShiftType, string> = {
@@ -197,16 +197,17 @@ export function Grid({
                       )}
                     >
                       {currentShifts.length > 0 ? (
-                        <div className="flex flex-col gap-1 items-center justify-center min-h-[28px]">
+                        <div className="flex flex-col items-center justify-center min-h-[28px] w-full h-full rounded-md overflow-hidden border border-slate-200">
                           {currentShifts.map((shiftType, idx) => (
                             <div key={`${dateStr}-${idx}`} className={clsx(
-                              "w-full h-6 flex items-center justify-center rounded-md border text-[10px] font-bold transition-transform hover:scale-105 active:scale-95",
+                              "w-full flex-1 flex items-center justify-center text-[10px] font-bold transition-transform",
+                              idx > 0 && "border-t border-slate-200",
                               shiftColors[shiftType],
-                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-offset-1",
-                              isSelectedRequester && "ring-2 ring-emerald-500 ring-offset-1",
-                              isSelectedTarget && "ring-2 ring-amber-500 ring-offset-1",
-                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-offset-1 shadow-md shadow-yellow-200 font-extrabold",
-                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-offset-1 shadow-md shadow-blue-200 font-extrabold"
+                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
+                              isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
+                              isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
+                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
+                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
                             )}>
                               {shiftLabels[shiftType]}
                             </div>
