@@ -188,22 +188,48 @@ export default function App() {
       // Perform Move or Swap
       setLoading(true);
       try {
-        const sourceShift = shifts.find(s => s.staff_id === selectedShiftForMove.staffId && s.date === selectedShiftForMove.dateStr && s.shift_type === selectedShiftForMove.shiftType);
-        // For target, if there are multiple shifts, we might need to know WHICH one to swap with.
-        // But currently swap logic assumes 1-to-1 or 1-to-empty.
-        // If target has multiple shifts, this simple logic might be ambiguous.
-        // For now, let's assume we swap with the first shift if exists, or just move to the cell.
-        // Wait, if we move to a cell with existing shifts, do we add or replace?
-        // The current logic replaces.
-        
-        const targetShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr); // Just pick one for now
+        const sourceShift = shifts.find(s => s.staff_id === selectedShiftForMove.staffId && s.date === selectedShiftForMove.dateStr);
+        const targetShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
 
         if (sourceShift && targetShift) {
-          // Swap: Update source to temp date, target to source, source to target
-          const tempDate = '2000-01-01';
-          await supabase.from('shifts').update({ date: tempDate }).eq('id', sourceShift.id);
-          await supabase.from('shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
-          await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
+          let action = '';
+          if (window.confirm(`ปลายทางมีเวรอยู่แล้ว ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
+            action = 'merge';
+          } else if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?\n(กด OK เพื่อสลับเวร, กด Cancel เพื่อยกเลิก)`)) {
+            action = 'swap';
+          } else {
+            setSelectedShiftForMove(null);
+            setLoading(false);
+            return;
+          }
+
+          if (action === 'merge') {
+            const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
+            const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
+            
+            let newTypes = [...targetTypes, ...sourceTypes];
+            newTypes = Array.from(new Set(newTypes)); // Remove duplicates
+            
+            if (newTypes.length > 2) {
+              alert('ไม่สามารถรวมเวรได้ เนื่องจาก 1 วันสามารถมีเวรได้สูงสุด 2 กะเท่านั้น');
+              setSelectedShiftForMove(null);
+              setLoading(false);
+              return;
+            }
+            
+            const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
+            newTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
+            const newShiftTypeStr = newTypes.join(',');
+
+            await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
+            await supabase.from('shifts').delete().eq('id', sourceShift.id);
+          } else if (action === 'swap') {
+            // Swap: Update source to temp date, target to source, source to target
+            const tempDate = '2000-01-01';
+            await supabase.from('shifts').update({ date: tempDate }).eq('id', sourceShift.id);
+            await supabase.from('shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
+            await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
+          }
         } else if (sourceShift && !targetShift) {
           // Move
           await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
