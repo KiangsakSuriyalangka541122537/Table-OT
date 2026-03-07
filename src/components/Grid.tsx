@@ -105,9 +105,19 @@ export function Grid({
         <tbody className="bg-white divide-y divide-slate-100">
           {staffList.map((staff) => {
             const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-            const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
-            const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
-            const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
+            let mCount = 0;
+            let aCount = 0;
+            let nCount = 0;
+            
+            staffShifts.forEach(s => {
+              if (s.shift_type) {
+                const types = s.shift_type.split(',');
+                if (types.includes('M')) mCount++;
+                if (types.includes('A')) aCount++;
+                if (types.includes('N')) nCount++;
+              }
+            });
+            
             const totalShifts = mCount + ((aCount + nCount) / 2);
             const totalPay = totalShifts * 750;
 
@@ -198,7 +208,7 @@ export function Grid({
                     >
                       {currentShifts.length > 0 ? (
                         <div className={clsx(
-                          "flex flex-col items-center justify-center min-h-[28px] w-full h-full rounded-md overflow-hidden border",
+                          "flex flex-col items-center justify-center min-h-[40px] w-full h-full rounded-md overflow-hidden border",
                           currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100" : "border-slate-200"
                         )}>
                           {currentShifts.map((shiftType, idx) => (
@@ -254,10 +264,16 @@ export function Grid({
                 <span className="text-sm font-black text-indigo-700">
                   {staffList.reduce((acc, staff) => {
                     const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-                    const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
-                    const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
-                    const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
-                    return acc + mCount + ((aCount + nCount) / 2);
+                    let m = 0, a = 0, n = 0;
+                    staffShifts.forEach(s => {
+                      if (s.shift_type) {
+                        const types = s.shift_type.split(',');
+                        if (types.includes('M')) m++;
+                        if (types.includes('A')) a++;
+                        if (types.includes('N')) n++;
+                      }
+                    });
+                    return acc + m + ((a + n) / 2);
                   }, 0)}
                 </span>
               </td>
@@ -265,10 +281,16 @@ export function Grid({
                 <span className="text-sm font-black text-emerald-700">
                   ฿{staffList.reduce((acc, staff) => {
                     const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-                    const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
-                    const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
-                    const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
-                    return acc + (mCount + ((aCount + nCount) / 2)) * 750;
+                    let m = 0, a = 0, n = 0;
+                    staffShifts.forEach(s => {
+                      if (s.shift_type) {
+                        const types = s.shift_type.split(',');
+                        if (types.includes('M')) m++;
+                        if (types.includes('A')) a++;
+                        if (types.includes('N')) n++;
+                      }
+                    });
+                    return acc + (m + ((a + n) / 2)) * 750;
                   }, 0).toLocaleString()}
                 </span>
               </td>

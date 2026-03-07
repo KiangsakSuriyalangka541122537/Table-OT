@@ -200,7 +200,7 @@ export default function App() {
           let mergedTypes = [...targetTypes, ...sourceTypes];
           mergedTypes = Array.from(new Set(mergedTypes));
           
-          const canMerge = mergedTypes.length <= 2;
+          const canMerge = mergedTypes.length <= 3;
           
           let action = '';
           
@@ -214,8 +214,8 @@ export default function App() {
                 }
              }
           } else {
-             // Cannot merge due to max 2 shifts constraint
-             if (window.confirm(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 2 กะ (มี ${mergedTypes.join(', ')}) ต้องการ "สลับเวร" แทนหรือไม่?`)) {
+             // Cannot merge due to max 3 shifts constraint
+             if (window.confirm(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (มี ${mergedTypes.join(', ')}) ต้องการ "สลับเวร" แทนหรือไม่?`)) {
                 action = 'swap';
              }
           }
@@ -375,8 +375,8 @@ export default function App() {
           newTypes = newTypes.filter(t => t !== newShiftType);
         } else {
           // Add new shift
-          if (newTypes.length >= 2) {
-            alert('สามารถลงเวรได้สูงสุด 2 กะต่อวันเท่านั้น');
+          if (newTypes.length >= 3) {
+            alert('สามารถลงเวรได้สูงสุด 3 กะต่อวันเท่านั้น');
             return;
           }
           newTypes.push(newShiftType);
