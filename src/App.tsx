@@ -17,6 +17,7 @@ import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
+import { mergeShifts, formatShiftDisplay, SHIFT_ORDER } from './utils/shiftUtils';
 
 export default function App() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -194,19 +195,19 @@ export default function App() {
         if (sourceShift && targetShift) {
           // Check if merge is possible
           const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
-          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
+          const typeToMove = selectedShiftForMove.shiftType;
           
-          // Combine unique types
-          let mergedTypes = [...targetTypes, ...sourceTypes];
-          mergedTypes = Array.from(new Set(mergedTypes));
-          
+          if (!typeToMove) throw new Error("No shift type selected");
+
+          // Calculate merged result
+          const mergedTypes = mergeShifts(targetTypes, typeToMove);
           const canMerge = mergedTypes.length <= 3;
           
           let action = '';
           
           if (canMerge) {
              // If merge is possible, prioritize merge
-             if (window.confirm(`ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
+             if (window.confirm(`ต้องการ "รวมเวร" เป็น ${formatShiftDisplay(mergedTypes)} หรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
                 action = 'merge';
              } else {
                 if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
@@ -215,18 +216,20 @@ export default function App() {
              }
           } else {
              // Cannot merge due to max 3 shifts constraint
-             if (window.confirm(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (มี ${mergedTypes.join(', ')}) ต้องการ "สลับเวร" แทนหรือไม่?`)) {
+             if (window.confirm(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (จะเป็น ${formatShiftDisplay(mergedTypes)}) ต้องการ "สลับเวร" แทนหรือไม่?`)) {
                 action = 'swap';
              }
           }
 
           if (action === 'merge') {
-            const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
-            mergedTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
             const newShiftTypeStr = mergedTypes.join(',');
 
             await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
+            
+            // Since selectedShiftForMove is only allowed for single-shift cells (enforced by selection logic),
+            // we can safely delete the source shift.
             await supabase.from('shifts').delete().eq('id', sourceShift.id);
+            
           } else if (action === 'swap') {
             // Swap: Update source to temp date, target to source, source to target
             const tempDate = '2000-01-01';
@@ -235,7 +238,7 @@ export default function App() {
             await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
           }
         } else if (sourceShift && !targetShift) {
-          // Move
+          // Move to empty slot
           await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
         }
         

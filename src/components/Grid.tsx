@@ -2,8 +2,9 @@ import React from 'react';
 import { format, getDaysInMonth, isWeekend, isToday } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { User as UserIcon } from 'lucide-react';
-import { Staff, Shift, ShiftType, User } from '../types';
+import { Staff, Shift, ShiftType, User, ShiftSwapRequest } from '../types';
 import clsx from 'clsx';
+import { SHIFT_LABELS, SHIFT_COLORS, formatShiftDisplay, calculateShiftCount } from '../utils/shiftUtils';
 
 interface GridProps {
   currentMonth: Date;
@@ -20,20 +21,6 @@ interface GridProps {
   pendingSwaps?: ShiftSwapRequest[];
   approvedSwaps?: ShiftSwapRequest[];
 }
-
-const shiftColors: Record<ShiftType, string> = {
-  M: 'bg-blue-50 text-blue-700',
-  A: 'bg-orange-50 text-orange-700',
-  N: 'bg-purple-50 text-purple-700',
-  O: 'bg-slate-50 text-slate-500',
-};
-
-const shiftLabels: Record<ShiftType, string> = {
-  M: 'ช',
-  A: 'บ',
-  N: 'ด',
-  O: 'หยุด',
-};
 
 export function Grid({ 
   currentMonth, 
@@ -105,20 +92,15 @@ export function Grid({
         <tbody className="bg-white divide-y divide-slate-100">
           {staffList.map((staff) => {
             const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-            let mCount = 0;
-            let aCount = 0;
-            let nCount = 0;
+            let totalShifts = 0;
             
             staffShifts.forEach(s => {
               if (s.shift_type) {
                 const types = s.shift_type.split(',');
-                if (types.includes('M')) mCount++;
-                if (types.includes('A')) aCount++;
-                if (types.includes('N')) nCount++;
+                totalShifts += calculateShiftCount(types);
               }
             });
             
-            const totalShifts = mCount + ((aCount + nCount) / 2);
             const totalPay = totalShifts * 750;
 
             return (
@@ -208,23 +190,19 @@ export function Grid({
                     >
                       {currentShifts.length > 0 ? (
                         <div className={clsx(
-                          "flex flex-col items-center justify-center min-h-[40px] w-full h-full rounded-md overflow-hidden border",
-                          currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100" : "border-slate-200"
+                          "flex items-center justify-center min-h-[40px] w-full h-full rounded-md overflow-hidden border px-1",
+                          currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100 bg-white" : "border-slate-200",
+                          // Use the color of the first shift for single shift, or white for multiple
+                          currentShifts.length === 1 ? SHIFT_COLORS[currentShifts[0]] : ""
                         )}>
-                          {currentShifts.map((shiftType, idx) => (
-                            <div key={`${dateStr}-${idx}`} className={clsx(
-                              "w-full flex-1 flex items-center justify-center text-[10px] font-bold transition-transform",
-                              idx > 0 && "border-t border-slate-200",
-                              shiftColors[shiftType],
-                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
-                              isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
-                              isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
-                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
-                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
-                            )}>
-                              {shiftLabels[shiftType]}
-                            </div>
-                          ))}
+                          <span className={clsx(
+                            "font-bold text-center leading-tight break-words whitespace-normal",
+                            // Adjust font size based on length
+                            currentShifts.length > 2 ? "text-[9px]" : "text-[10px]",
+                            currentShifts.length > 1 ? "text-slate-800" : ""
+                          )}>
+                            {formatShiftDisplay(currentShifts)}
+                          </span>
                         </div>
                       ) : (
                         <div className={clsx(
@@ -264,16 +242,14 @@ export function Grid({
                 <span className="text-sm font-black text-indigo-700">
                   {staffList.reduce((acc, staff) => {
                     const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-                    let m = 0, a = 0, n = 0;
+                    let count = 0;
                     staffShifts.forEach(s => {
                       if (s.shift_type) {
                         const types = s.shift_type.split(',');
-                        if (types.includes('M')) m++;
-                        if (types.includes('A')) a++;
-                        if (types.includes('N')) n++;
+                        count += calculateShiftCount(types);
                       }
                     });
-                    return acc + m + ((a + n) / 2);
+                    return acc + count;
                   }, 0)}
                 </span>
               </td>
@@ -281,16 +257,14 @@ export function Grid({
                 <span className="text-sm font-black text-emerald-700">
                   ฿{staffList.reduce((acc, staff) => {
                     const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-                    let m = 0, a = 0, n = 0;
+                    let count = 0;
                     staffShifts.forEach(s => {
                       if (s.shift_type) {
                         const types = s.shift_type.split(',');
-                        if (types.includes('M')) m++;
-                        if (types.includes('A')) a++;
-                        if (types.includes('N')) n++;
+                        count += calculateShiftCount(types);
                       }
                     });
-                    return acc + (m + ((a + n) / 2)) * 750;
+                    return acc + count * 750;
                   }, 0).toLocaleString()}
                 </span>
               </td>
