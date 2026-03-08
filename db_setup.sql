@@ -3,8 +3,9 @@
 -- 1. Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Create ENUM for Shift Types
-CREATE TYPE shift_type AS ENUM ('M', 'A', 'N', 'O');
+-- 2. Shift Types are now stored as TEXT (comma-separated for multiple shifts)
+-- Previous ENUM was: CREATE TYPE shift_type AS ENUM ('M', 'A', 'N', 'O');
+-- We use TEXT to allow 'M,A', 'M,N', etc.
 
 -- 3. Create Users Table
 CREATE TABLE users (
@@ -41,7 +42,7 @@ CREATE TABLE shifts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     staff_id UUID REFERENCES staff(id) ON DELETE CASCADE,
     date DATE NOT NULL,
-    shift_type shift_type NOT NULL,
+    shift_type TEXT NOT NULL, -- Changed from ENUM to TEXT
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(staff_id, date) -- Conflict Prevention: A staff cannot have overlapping shifts on the same day
@@ -64,18 +65,18 @@ CREATE TABLE logs (
 );
 
 -- 8. Create Shift Swap Requests Table
-CREATE TYPE shift_swap_status AS ENUM ('pending', 'approved', 'rejected');
+CREATE TYPE shift_swap_status AS ENUM ('pending', 'approved', 'rejected', 'waiting_target');
 
 CREATE TABLE shift_swap_requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     requester_staff_id UUID REFERENCES staff(id) ON DELETE CASCADE NOT NULL,
-    requester_shift_id UUID REFERENCES shifts(id) ON DELETE CASCADE NOT NULL,
+    requester_shift_id UUID REFERENCES shifts(id) ON DELETE CASCADE, -- Can be null if requesting from empty
     requester_date DATE NOT NULL,
-    requester_shift_type shift_type NOT NULL,
+    requester_shift_type TEXT NOT NULL, -- Changed from ENUM to TEXT
     target_staff_id UUID REFERENCES staff(id) ON DELETE CASCADE NOT NULL,
-    target_shift_id UUID REFERENCES shifts(id) ON DELETE CASCADE NOT NULL,
+    target_shift_id UUID REFERENCES shifts(id) ON DELETE CASCADE, -- Can be null if targeting empty
     target_date DATE NOT NULL,
-    target_shift_type shift_type NOT NULL,
+    target_shift_type TEXT NOT NULL, -- Changed from ENUM to TEXT
     status shift_swap_status NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
