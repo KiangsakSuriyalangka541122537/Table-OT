@@ -205,17 +205,12 @@ export default function App() {
           let action = '';
           
           if (canMerge) {
-             // Auto-merge if moving 'M' into a cell that doesn't have 'M'
-             if (selectedShiftForMove.shiftType === 'M' && !targetTypes.includes('M')) {
+             // If merge is possible, prioritize merge
+             if (window.confirm(`ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
                 action = 'merge';
              } else {
-                // If merge is possible, prioritize merge
-                if (window.confirm(`ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
-                   action = 'merge';
-                } else {
-                   if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
-                      action = 'swap';
-                   }
+                if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
+                   action = 'swap';
                 }
              }
           } else {
@@ -543,30 +538,18 @@ export default function App() {
         
       if (deleteError) throw deleteError;
 
-      // 1.5 Delete all swap requests for the current month
-      const currentMonthStr = format(currentMonth, 'yyyy-MM');
-      const { data: allSwaps } = await supabase.from('shift_swap_requests').select('id, requester_date, target_date');
-      
-      if (allSwaps) {
-        const swapsToDelete = allSwaps.filter(s => 
-          (s.requester_date && s.requester_date.startsWith(currentMonthStr)) || 
-          (s.target_date && s.target_date.startsWith(currentMonthStr))
-        );
-        
-        if (swapsToDelete.length > 0) {
-          const idsToDelete = swapsToDelete.map(s => s.id);
-          
-          for (let i = 0; i < idsToDelete.length; i += 100) {
-            const chunk = idsToDelete.slice(i, i + 100);
-            const { error: deleteSwapsError } = await supabase
-              .from('shift_swap_requests')
-              .delete()
-              .in('id', chunk);
-              
-            if (deleteSwapsError) throw deleteSwapsError;
-          }
-        }
-      }
+      // 1.5 Delete all swap requests for the current month (checking both requester and target dates)
+      await supabase
+        .from('shift_swap_requests')
+        .delete()
+        .gte('requester_date', startDate)
+        .lte('requester_date', endDate);
+
+      await supabase
+        .from('shift_swap_requests')
+        .delete()
+        .gte('target_date', startDate)
+        .lte('target_date', endDate);
 
       // Clear local states immediately for better UX
       setShifts([]);

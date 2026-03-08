@@ -22,10 +22,10 @@ interface GridProps {
 }
 
 const shiftColors: Record<ShiftType, string> = {
-  M: 'bg-blue-50 text-blue-700 border-blue-200',
-  A: 'bg-orange-50 text-orange-700 border-orange-200',
-  N: 'bg-purple-50 text-purple-700 border-purple-200',
-  O: 'bg-slate-50 text-slate-500 border-slate-200',
+  M: 'bg-blue-50 text-blue-700',
+  A: 'bg-orange-50 text-orange-700',
+  N: 'bg-purple-50 text-purple-700',
+  O: 'bg-slate-50 text-slate-500',
 };
 
 const shiftLabels: Record<ShiftType, string> = {
@@ -195,7 +195,7 @@ export function Grid({
                         }
                       }}
                       className={clsx(
-                        "shift-cell px-0.5 py-2 text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
+                        "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                         (isAdmin && !isPublished) && "hover:bg-slate-100/50",
                         isTdy && currentShifts.length === 0 && "bg-indigo-50/20",
                         isWknd && currentShifts.length === 0 && "bg-rose-50/20",
@@ -207,19 +207,25 @@ export function Grid({
                       )}
                     >
                       {currentShifts.length > 0 ? (
-                        currentShifts.map((shiftType, idx) => (
-                          <div key={`${dateStr}-${idx}`} className={clsx(
-                            "shift w-full flex items-center justify-center text-[11px] font-bold transition-all py-1.5 rounded-md border shadow-sm",
-                            shiftColors[shiftType],
-                            isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
-                            isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
-                            isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
-                            isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
-                            isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
-                          )}>
-                            {shiftLabels[shiftType]}
-                          </div>
-                        ))
+                        <div className={clsx(
+                          "flex flex-col items-center justify-center min-h-[40px] w-full h-full rounded-md overflow-hidden border",
+                          currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100" : "border-slate-200"
+                        )}>
+                          {currentShifts.map((shiftType, idx) => (
+                            <div key={`${dateStr}-${idx}`} className={clsx(
+                              "w-full flex-1 flex items-center justify-center text-[10px] font-bold transition-transform",
+                              idx > 0 && "border-t border-slate-200",
+                              shiftColors[shiftType],
+                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
+                              isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
+                              isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
+                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
+                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
+                            )}>
+                              {shiftLabels[shiftType]}
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <div className={clsx(
                           "w-full h-7 flex items-center justify-center text-slate-200 hover:text-slate-300 transition-colors",
