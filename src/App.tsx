@@ -201,7 +201,7 @@ export default function App() {
 
           // Calculate merged result
           const mergedTypes = mergeShifts(targetTypes, typeToMove);
-          const canMerge = mergedTypes.length <= 3;
+          const canMerge = mergedTypes.length <= 4; // Updated limit to 4
           
           let action = '';
           
@@ -211,8 +211,8 @@ export default function App() {
                 action = 'merge';
              }
           } else {
-             // Cannot merge due to max 3 shifts constraint. No swap option.
-             alert(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (จะเป็น ${formatShiftDisplay(mergedTypes)})`);
+             // Cannot merge due to max 4 shifts constraint. No swap option.
+             alert(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 4 กะ (จะเป็น ${formatShiftDisplay(mergedTypes)})`);
           }
 
           if (action === 'merge') {
