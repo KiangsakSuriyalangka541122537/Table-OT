@@ -206,19 +206,13 @@ export default function App() {
           let action = '';
           
           if (canMerge) {
-             // If merge is possible, prioritize merge
-             if (window.confirm(`ต้องการ "รวมเวร" เป็น ${formatShiftDisplay(mergedTypes)} หรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
+             // If merge is possible, only ask to merge. No swap option.
+             if (window.confirm(`ต้องการ "รวมเวร" เป็น ${formatShiftDisplay(mergedTypes)} หรือไม่?`)) {
                 action = 'merge';
-             } else {
-                if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
-                   action = 'swap';
-                }
              }
           } else {
-             // Cannot merge due to max 3 shifts constraint
-             if (window.confirm(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (จะเป็น ${formatShiftDisplay(mergedTypes)}) ต้องการ "สลับเวร" แทนหรือไม่?`)) {
-                action = 'swap';
-             }
+             // Cannot merge due to max 3 shifts constraint. No swap option.
+             alert(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (จะเป็น ${formatShiftDisplay(mergedTypes)})`);
           }
 
           if (action === 'merge') {
@@ -230,13 +224,8 @@ export default function App() {
             // we can safely delete the source shift.
             await supabase.from('shifts').delete().eq('id', sourceShift.id);
             
-          } else if (action === 'swap') {
-            // Swap: Update source to temp date, target to source, source to target
-            const tempDate = '2000-01-01';
-            await supabase.from('shifts').update({ date: tempDate }).eq('id', sourceShift.id);
-            await supabase.from('shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
-            await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
-          }
+          } 
+          // Swap block removed as requested
         } else if (sourceShift && !targetShift) {
           // Move to empty slot
           await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
