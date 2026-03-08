@@ -195,7 +195,7 @@ export function Grid({
                         }
                       }}
                       className={clsx(
-                        "px-0.5 py-2 whitespace-nowrap text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
+                        "shift-cell px-0.5 py-2 text-center text-xs border-r border-slate-100 cursor-pointer transition-all relative",
                         (isAdmin && !isPublished) && "hover:bg-slate-100/50",
                         isTdy && currentShifts.length === 0 && "bg-indigo-50/20",
                         isWknd && currentShifts.length === 0 && "bg-rose-50/20",
@@ -207,21 +207,19 @@ export function Grid({
                       )}
                     >
                       {currentShifts.length > 0 ? (
-                        <div className="flex flex-col gap-1 w-full h-full justify-center">
-                          {currentShifts.map((shiftType, idx) => (
-                            <div key={`${dateStr}-${idx}`} className={clsx(
-                              "w-full flex items-center justify-center text-[11px] font-bold transition-all py-1.5 rounded-md border shadow-sm",
-                              shiftColors[shiftType],
-                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
-                              isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
-                              isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
-                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
-                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
-                            )}>
-                              {shiftLabels[shiftType]}
-                            </div>
-                          ))}
-                        </div>
+                        currentShifts.map((shiftType, idx) => (
+                          <div key={`${dateStr}-${idx}`} className={clsx(
+                            "shift w-full flex items-center justify-center text-[11px] font-bold transition-all py-1.5 rounded-md border shadow-sm",
+                            shiftColors[shiftType],
+                            isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
+                            isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
+                            isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
+                            isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
+                            isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
+                          )}>
+                            {shiftLabels[shiftType]}
+                          </div>
+                        ))
                       ) : (
                         <div className={clsx(
                           "w-full h-7 flex items-center justify-center text-slate-200 hover:text-slate-300 transition-colors",
