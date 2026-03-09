@@ -23,6 +23,8 @@ const shiftColors: Record<ShiftType, string> = {
   O: 'bg-gray-100 text-gray-500 border-gray-200',
 };
 
+import { applyShiftOperations, generateMoveOperations } from '../lib/shiftOperations';
+
 export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserNotificationsProps) {
   const [requests, setRequests] = useState<ShiftSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,9 +33,6 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const notificationRef = React.useRef<HTMLDivElement>(null);
 
   const currentUserStaff = allStaff.find(s => s.name === user.name);
-  // If admin, they might want to see all requests? 
-  // But the requirement says "swap shifts like others", so they act as a user.
-  // So we only show requests targeting them.
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -71,8 +70,6 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
 
   const fetchUserRequests = async () => {
     if (!currentUserStaff) return;
-    // Don't set loading to true on background polls to avoid UI flickering
-    // Only set loading on initial fetch or manual refresh
     
     try {
       const { data, error } = await supabase
@@ -86,7 +83,6 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       setRequests(data || []);
     } catch (err) {
       console.error('Error fetching user notifications:', err);
-      // Don't show error on every poll failure to avoid annoyance
     } finally {
       setLoading(false);
     }
@@ -100,10 +96,24 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const handleAccept = async (request: ShiftSwapRequest) => {
     setLoading(true);
     try {
+      // 1. Generate and apply shift operations immediately
+      const types = request.requester_shift_type.split(',');
+      for (const type of types) {
+        const operations = generateMoveOperations(
+          request.requester_staff_id,
+          request.requester_date,
+          request.target_staff_id,
+          request.target_date,
+          type.trim()
+        );
+        await applyShiftOperations(operations);
+      }
+
+      // 2. Update request status to APPROVED
       const { error } = await supabase
         .from('shift_swap_requests')
         .update({ 
-          status: ShiftSwapStatus.PENDING, 
+          status: ShiftSwapStatus.APPROVED, 
           updated_at: new Date().toISOString() 
         })
         .eq('id', request.id);
@@ -111,16 +121,16 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       if (error) throw error;
 
       await supabase.from('logs').insert({
-        message: `Staff ${user.name} accepted swap request ${request.id}. Status changed to PENDING.`,
-        action_type: 'SHIFT_SWAP_ACCEPTED_BY_TARGET'
+        message: `Staff ${user.name} accepted move request ${request.id}. Shifts updated immediately.`,
+        action_type: 'SHIFT_MOVE_COMPLETED'
       });
 
-      alert('ยืนยันการย้ายเวรเรียบร้อยแล้ว คำขอถูกส่งให้ผู้ดูแลระบบพิจารณา');
+      alert('ยืนยันการรับเวรเรียบร้อยแล้ว ตารางเวรถูกอัปเดตทันที');
       fetchUserRequests();
       onUpdate(); // Refresh the main grid
       setIsOpen(false);
     } catch (err: any) {
-      console.error('Error accepting swap request:', err);
+      console.error('Error accepting move request:', err);
       alert(`เกิดข้อผิดพลาด: ${err.message}`);
     } finally {
       setLoading(false);

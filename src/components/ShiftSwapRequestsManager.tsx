@@ -56,16 +56,16 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setLoading(true);
     setError(null);
     try {
-      // 1. Swap Logic
-      if (request.requester_shift_id) {
+      // 1. Apply shift changes
+      const types = request.requester_shift_type.split(',');
+      for (const type of types) {
         const operations = generateMoveOperations(
           request.requester_staff_id,
           request.requester_date,
           request.target_staff_id,
           request.target_date,
-          request.requester_shift_type
+          type.trim()
         );
-
         await applyShiftOperations(operations);
       }
 
@@ -79,15 +79,15 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
       // 4. Log action
       await supabase.from('logs').insert({
-        message: `Admin approved swap request ${request.id} between ${request.requester_staff_id} and ${request.target_staff_id}`,
-        action_type: 'SHIFT_SWAP_APPROVED'
+        message: `Admin approved move request ${request.id} from ${request.requester_staff_id} to ${request.target_staff_id}`,
+        action_type: 'SHIFT_MOVE_APPROVED'
       });
 
       alert('อนุมัติคำขอย้ายเวรเรียบร้อยแล้ว');
       fetchPendingRequests();
       onUpdate(); // Refresh main roster grid
     } catch (err) {
-      console.error('Error approving swap request:', err);
+      console.error('Error approving move request:', err);
       setError('เกิดข้อผิดพลาดในการอนุมัติคำขอ');
     } finally {
       setLoading(false);

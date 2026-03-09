@@ -279,11 +279,25 @@ export default function App() {
 
   const handleSendSwapRequest = async (request: Omit<ShiftSwapRequest, 'id' | 'status' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('Sending swap request:', request);
-      const initialStatus = (request.target_staff_id !== request.requester_staff_id) 
-        ? ShiftSwapStatus.WAITING_TARGET 
-        : ShiftSwapStatus.PENDING;
+      console.log('Sending move request:', request);
+      const isSelfMove = request.target_staff_id === request.requester_staff_id;
+      const initialStatus = isSelfMove ? ShiftSwapStatus.APPROVED : ShiftSwapStatus.WAITING_TARGET;
       
+      if (isSelfMove) {
+        // Apply shifts immediately if moving to self (e.g. admin moving their own shift)
+        const types = request.requester_shift_type.split(',');
+        for (const type of types) {
+          const operations = generateMoveOperations(
+            request.requester_staff_id,
+            request.requester_date,
+            request.target_staff_id,
+            request.target_date,
+            type.trim()
+          );
+          await applyShiftOperations(operations);
+        }
+      }
+
       const { error } = await supabase.from('shift_swap_requests').insert({
         ...request,
         target_shift_id: request.target_shift_id && !request.target_shift_id.startsWith('empty-') 
@@ -291,25 +305,26 @@ export default function App() {
           : null,
         status: initialStatus
       });
+
       if (error) {
         console.error('Supabase error details:', JSON.stringify(error, null, 2));
         throw error;
       }
 
       await supabase.from('logs').insert({
-        message: `Staff ${request.requester_staff_id} requested to swap shift ${request.requester_shift_id} with ${request.target_staff_id}'s shift ${request.target_shift_id}. Status: ${initialStatus}`,
-        action_type: 'SHIFT_SWAP_REQUEST_SENT'
+        message: `Staff ${request.requester_staff_id} moved shift ${request.requester_shift_type} to ${request.target_staff_id} on ${request.target_date}. Status: ${initialStatus}`,
+        action_type: isSelfMove ? 'SHIFT_MOVE_COMPLETED' : 'SHIFT_MOVE_REQUEST_SENT'
       });
 
-      alert(initialStatus === ShiftSwapStatus.WAITING_TARGET 
-        ? 'ส่งคำขอย้ายเวรแล้ว กรุณารอเพื่อนร่วมงานยืนยัน' 
-        : 'ส่งคำขอย้ายเวรแล้ว กรุณารอผู้ดูแลระบบอนุมัติ');
+      alert(isSelfMove 
+        ? 'ย้ายเวรเรียบร้อยแล้ว' 
+        : 'ส่งคำขอย้ายเวรแล้ว กรุณารอเพื่อนร่วมงานยืนยัน');
       
       setShiftToSwap(null);
       setTargetShiftToSwap(null);
-      fetchData(); // Refresh data to reflect any changes or new requests
+      fetchData(); // Refresh data
     } catch (error) {
-      console.error('Error sending swap request:', error);
+      console.error('Error sending move request:', error);
       alert('เกิดข้อผิดพลาดในการส่งคำขอย้ายเวร');
     }
   };
