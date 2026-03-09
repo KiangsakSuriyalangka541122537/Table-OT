@@ -4,7 +4,7 @@ import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../t
 import { format, isValid } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
-import { applyShiftOperations, generateMoveOperations } from '../lib/shiftOperations';
+import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/shiftOperations';
 
 interface ShiftSwapRequestsManagerProps {
   allStaff: Staff[];
@@ -58,16 +58,18 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     try {
       // 1. Apply shift changes
       const types = request.requester_shift_type.split(',');
+      const allOperations: ShiftOperation[] = [];
       for (const type of types) {
         const operations = generateMoveOperations(
           request.requester_staff_id,
           request.requester_date,
           request.target_staff_id,
           request.target_date,
-          type.trim()
+          type.trim() as ShiftType
         );
-        await applyShiftOperations(operations);
+        allOperations.push(...operations);
       }
+      await applyShiftOperations(allOperations);
 
       // 2. Update request status
       const { error: updateError } = await supabase.from('shift_swap_requests').update({ 

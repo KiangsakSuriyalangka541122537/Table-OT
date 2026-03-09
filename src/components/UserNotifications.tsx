@@ -23,7 +23,7 @@ const shiftColors: Record<ShiftType, string> = {
   O: 'bg-gray-100 text-gray-500 border-gray-200',
 };
 
-import { applyShiftOperations, generateMoveOperations } from '../lib/shiftOperations';
+import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/shiftOperations';
 
 export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserNotificationsProps) {
   const [requests, setRequests] = useState<ShiftSwapRequest[]>([]);
@@ -98,16 +98,18 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
     try {
       // 1. Generate and apply shift operations immediately
       const types = request.requester_shift_type.split(',');
+      const allOperations: ShiftOperation[] = [];
       for (const type of types) {
         const operations = generateMoveOperations(
           request.requester_staff_id,
           request.requester_date,
           request.target_staff_id,
           request.target_date,
-          type.trim()
+          type.trim() as ShiftType
         );
-        await applyShiftOperations(operations);
+        allOperations.push(...operations);
       }
+      await applyShiftOperations(allOperations);
 
       // 2. Update request status to APPROVED
       const { error } = await supabase

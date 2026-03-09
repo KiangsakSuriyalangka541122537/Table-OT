@@ -18,7 +18,7 @@ import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
 import { formatShiftDisplay, SHIFT_ORDER } from './utils/shiftUtils';
-import { applyShiftOperations, generateMoveOperations } from './lib/shiftOperations';
+import { applyShiftOperations, generateMoveOperations, ShiftOperation } from './lib/shiftOperations';
 
 export default function App() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -286,16 +286,18 @@ export default function App() {
       if (isSelfMove) {
         // Apply shifts immediately if moving to self (e.g. admin moving their own shift)
         const types = request.requester_shift_type.split(',');
+        const allOperations: ShiftOperation[] = [];
         for (const type of types) {
           const operations = generateMoveOperations(
             request.requester_staff_id,
             request.requester_date,
             request.target_staff_id,
             request.target_date,
-            type.trim()
+            type.trim() as ShiftType
           );
-          await applyShiftOperations(operations);
+          allOperations.push(...operations);
         }
+        await applyShiftOperations(allOperations);
       }
 
       const { error } = await supabase.from('shift_swap_requests').insert({
