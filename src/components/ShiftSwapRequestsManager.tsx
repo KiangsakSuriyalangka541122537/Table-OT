@@ -57,35 +57,42 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     try {
       // 1. Swap Logic
       if (request.requester_shift_id && request.target_shift_id) {
-        // Case A: Swapping two existing shifts
-        // We only need to swap the staff_id of the two shifts.
-        // To avoid unique constraint violations during the intermediate step, use a temporary date.
+        // Case A: Moving requester's shift to a cell that already has a shift
+        // This is a "Merge" operation, not a "Swap" anymore based on user request.
         
-        // 1. Move requester's shift to a temp date
-        const { error: errorTemp } = await supabase.from('shifts').update({
-          date: '2000-01-01'
-        }).eq('id', request.requester_shift_id);
-        
-        if (errorTemp) throw new Error(`Failed to move requester shift to temp: ${errorTemp.message}`);
+        // 1. Get the current target shift to know its existing types
+        const { data: targetShiftData, error: targetFetchError } = await supabase
+          .from('shifts')
+          .select('shift_type')
+          .eq('id', request.target_shift_id)
+          .single();
 
-        // 2. Update target's shift to belong to requester (keep target's date)
-        const { error: error2 } = await supabase.from('shifts').update({
-          staff_id: request.requester_staff_id
+        if (targetFetchError) throw new Error(`Failed to fetch target shift: ${targetFetchError.message}`);
+
+        // 2. Calculate new merged shift type
+        const existingTargetTypes = targetShiftData.shift_type ? targetShiftData.shift_type.split(',') : [];
+        const typeToMove = request.requester_shift_type;
+        
+        // Simple merge logic (similar to utils/shiftUtils.ts)
+        const newTypes = [...new Set([...existingTargetTypes, typeToMove])];
+        
+        if (newTypes.length > 4) {
+             throw new Error("ไม่สามารถรวมเวรได้เนื่องจากเกิน 4 กะ");
+        }
+        
+        const newShiftTypeStr = newTypes.join(',');
+
+        // 3. Update the target shift with the merged types
+        const { error: errorUpdateTarget } = await supabase.from('shifts').update({
+          shift_type: newShiftTypeStr
         }).eq('id', request.target_shift_id);
 
-        if (error2) {
-          // Rollback
-          await supabase.from('shifts').update({ date: request.requester_date }).eq('id', request.requester_shift_id);
-          throw new Error(`Failed to update target shift: ${error2.message}`);
-        }
+        if (errorUpdateTarget) throw new Error(`Failed to update target shift with merged types: ${errorUpdateTarget.message}`);
 
-        // 3. Update requester's shift to belong to target, and restore its original date
-        const { error: error1 } = await supabase.from('shifts').update({
-          staff_id: request.target_staff_id,
-          date: request.requester_date
-        }).eq('id', request.requester_shift_id);
+        // 4. Delete the requester's original shift since it has been moved/merged
+        const { error: errorDeleteRequester } = await supabase.from('shifts').delete().eq('id', request.requester_shift_id);
         
-        if (error1) throw new Error(`Failed to update requester shift: ${error1.message}`);
+        if (errorDeleteRequester) throw new Error(`Failed to delete requester shift after merge: ${errorDeleteRequester.message}`);
 
       } else if (request.requester_shift_id && !request.target_shift_id) {
         // Case B: Moving Requester's Shift to an Empty Slot
@@ -112,7 +119,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         action_type: 'SHIFT_SWAP_APPROVED'
       });
 
-      alert('อนุมัติคำขอสลับเวรเรียบร้อยแล้ว');
+      alert('อนุมัติคำขอย้ายเวรเรียบร้อยแล้ว');
       fetchPendingRequests();
       onUpdate(); // Refresh main roster grid
     } catch (err) {
@@ -134,7 +141,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         action_type: 'SHIFT_SWAP_REJECTED'
       });
 
-      alert('ปฏิเสธคำขอสลับเวรเรียบร้อยแล้ว');
+      alert('ปฏิเสธคำขอย้ายเวรเรียบร้อยแล้ว');
       fetchPendingRequests();
       onUpdate(); // Refresh main roster grid
     } catch (err) {
@@ -168,7 +175,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     <div className="bg-white shadow-sm rounded-xl border border-gray-200 p-6">
       <div className="flex items-center mb-6">
         <Users className="w-5 h-5 text-indigo-600 mr-3" />
-        <h2 className="text-xl font-bold text-gray-900">คำขอสลับเวรที่รอดำเนินการ</h2>
+        <h2 className="text-xl font-bold text-gray-900">คำขอย้ายเวรที่รอดำเนินการ</h2>
       </div>
 
       {loading && (
@@ -185,7 +192,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
       {!loading && pendingRequests.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          ไม่พบคำขอสลับเวรที่รอดำเนินการ
+          ไม่พบคำขอย้ายเวรที่รอดำเนินการ
         </div>
       )}
 
@@ -209,7 +216,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Requester's Shift */}
                 <div className="border border-gray-300 rounded-lg p-3 bg-white">
-                  <h3 className="text-md font-semibold text-gray-800 mb-2">ผู้ขอสลับเวร</h3>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">ผู้ขอย้ายเวร</h3>
                   <p className="text-sm text-gray-700 mb-1">ชื่อ: {getStaffName(request.requester_staff_id)}</p>
                   <p className="text-sm text-gray-700 mb-1">วันที่: {formatDateSafe(request.requester_date)}</p>
                   <p className="text-sm text-gray-700">กะ: 
@@ -221,7 +228,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
                 {/* Target's Shift */}
                 <div className="border border-gray-300 rounded-lg p-3 bg-white">
-                  <h3 className="text-md font-semibold text-gray-800 mb-2">ต้องการสลับกับ</h3>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">ต้องการย้ายไปรวมกับ</h3>
                   <p className="text-sm text-gray-700 mb-1">ชื่อ: {getStaffName(request.target_staff_id)}</p>
                   <p className="text-sm text-gray-700 mb-1">วันที่: {formatDateSafe(request.target_date)}</p>
                   <p className="text-sm text-gray-700">กะ: 

@@ -186,7 +186,7 @@ export default function App() {
         return;
       }
 
-      // Perform Move or Swap
+      // Perform Move
       setLoading(true);
       try {
         const sourceShift = shifts.find(s => s.staff_id === selectedShiftForMove.staffId && s.date === selectedShiftForMove.dateStr);
@@ -233,15 +233,15 @@ export default function App() {
         
         await fetchData(); // Refresh shifts
       } catch (error) {
-        console.error("Error moving/swapping shift:", error);
-        alert("เกิดข้อผิดพลาดในการย้าย/สลับเวร");
+        console.error("Error moving shift:", error);
+        alert("เกิดข้อผิดพลาดในการย้ายเวร");
       } finally {
         setLoading(false);
         setSelectedShiftForMove(null);
       }
     } else {
       if (currentShifts.length === 1) {
-        // Select for move/swap
+        // Select for move
         setSelectedShiftForMove({ staffId, dateStr, shiftType: currentShifts[0] });
       } else if (currentShifts.length > 1) {
         // If multiple shifts, open edit modal directly
@@ -332,15 +332,15 @@ export default function App() {
       });
 
       alert(initialStatus === ShiftSwapStatus.WAITING_TARGET 
-        ? 'ส่งคำขอสลับเวรแล้ว กรุณารอเพื่อนร่วมงานยืนยัน' 
-        : 'ส่งคำขอสลับเวรแล้ว กรุณารอผู้ดูแลระบบอนุมัติ');
+        ? 'ส่งคำขอย้ายเวรแล้ว กรุณารอเพื่อนร่วมงานยืนยัน' 
+        : 'ส่งคำขอย้ายเวรแล้ว กรุณารอผู้ดูแลระบบอนุมัติ');
       
       setShiftToSwap(null);
       setTargetShiftToSwap(null);
       fetchData(); // Refresh data to reflect any changes or new requests
     } catch (error) {
       console.error('Error sending swap request:', error);
-      alert('เกิดข้อผิดพลาดในการส่งคำขอสลับเวร');
+      alert('เกิดข้อผิดพลาดในการส่งคำขอย้ายเวร');
     }
   };
 
@@ -705,7 +705,7 @@ export default function App() {
                     <p className="text-sm font-medium text-indigo-900">
                       กำลังเลือกเวรของ <span className="font-bold">{staffList.find(s => s.id === selectedShiftForMove.staffId)?.name}</span> วันที่ {format(new Date(selectedShiftForMove.dateStr), 'dd/MM/yyyy')}
                     </p>
-                    <p className="text-xs text-indigo-700">คลิกช่องอื่นเพื่อย้าย/สลับ หรือคลิกที่เดิมเพื่อแก้ไข</p>
+                    <p className="text-xs text-indigo-700">คลิกช่องอื่นเพื่อย้าย หรือคลิกที่เดิมเพื่อแก้ไข</p>
                   </div>
                 </div>
                 <button 
@@ -758,7 +758,7 @@ export default function App() {
                     disabled={!shiftToSwap || !targetShiftToSwap}
                     className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
-                    ยืนยันการสลับ
+                    ยืนยันการย้าย
                   </button>
                 </div>
               </div>

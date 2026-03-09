@@ -60,7 +60,7 @@ export function ShiftSwapRequestModal({
   const handleSendRequest = async () => {
     setError(null);
     if (!requesterShiftId || !targetStaffId || !targetShiftId) {
-      setError('กรุณาเลือกกะของคุณและกะที่ต้องการสลับด้วย');
+      setError('กรุณาเลือกกะของคุณและกะที่ต้องการย้ายไปรวมด้วย');
       return;
     }
 
@@ -93,7 +93,7 @@ export function ShiftSwapRequestModal({
       });
       onClose();
     } catch (err) {
-      setError('เกิดข้อผิดพลาดในการส่งคำขอสลับเวร');
+      setError('เกิดข้อผิดพลาดในการส่งคำขอย้ายเวร');
       console.error('Error sending swap request:', err);
     } finally {
       setLoading(false);
@@ -153,8 +153,8 @@ export function ShiftSwapRequestModal({
           <div className="mx-auto w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
             <AlertCircle className="w-6 h-6 text-indigo-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">ขอสลับเวร</h2>
-          <p className="text-gray-500 mt-2">กรุณาเลือกกะที่ต้องการสลับด้วย</p>
+          <h2 className="text-2xl font-bold text-gray-900">ขอย้ายเวร</h2>
+          <p className="text-gray-500 mt-2">กรุณาเลือกกะที่ต้องการย้ายไปรวมด้วย</p>
         </div>
 
         {error && (
@@ -168,7 +168,7 @@ export function ShiftSwapRequestModal({
           {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
             <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100 shadow-sm space-y-4">
               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">
-                <span>ยืนยันการสลับเวร</span>
+                <span>ยืนยันการย้ายเวร</span>
               </div>
               <div className="flex items-center justify-between gap-6">
                 <div className="flex-1 text-center">
@@ -288,7 +288,7 @@ export function ShiftSwapRequestModal({
             disabled={loading || !requesterShiftId || !targetStaffId || !targetShiftId}
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'กำลังส่งคำขอ...' : 'ส่งคำขอสลับเวร'}
+            {loading ? 'กำลังส่งคำขอ...' : 'ส่งคำขอย้ายเวร'}
           </button>
         </div>
       </div>

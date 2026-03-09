@@ -106,13 +106,13 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
         <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
           <ArrowRightLeft className="w-4 h-4" />
         </div>
-        <h3 className="font-bold text-slate-800">ประวัติการแลกเวร (เดือน{format(currentMonth, 'MMMM', { locale: th })})</h3>
+        <h3 className="font-bold text-slate-800">ประวัติการย้ายเวร (เดือน{format(currentMonth, 'MMMM', { locale: th })})</h3>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-24 gap-y-6 p-8">
         {history.length === 0 ? (
            <div className="col-span-full p-8 text-center text-slate-400 text-sm">
-             ยังไม่มีประวัติการแลกเวรในเดือนนี้
+             ยังไม่มีประวัติการย้ายเวรในเดือนนี้
            </div>
         ) : (
           history.map((item) => (
