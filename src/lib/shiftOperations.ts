@@ -70,7 +70,11 @@ export const applyShiftOperations = async (operations: ShiftOperation[]) => {
           newTypes.push(op.type);
         }
       } else {
-        newTypes = newTypes.filter(t => t !== op.type);
+        // Find the index of the type to remove
+        const index = newTypes.indexOf(op.type);
+        if (index !== -1) {
+          newTypes.splice(index, 1);
+        }
       }
     }
 
