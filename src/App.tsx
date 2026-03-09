@@ -521,16 +521,9 @@ export default function App() {
       const startDate = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1), 'yyyy-MM-dd');
       const endDate = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0), 'yyyy-MM-dd');
       
-      // 1. Delete all shifts for the current month
-      const { error: deleteError } = await supabase
-        .from('shifts')
-        .delete()
-        .gte('date', startDate)
-        .lte('date', endDate);
-        
-      if (deleteError) throw deleteError;
-
-      // 1.5 Delete all swap requests for the current month (checking both requester and target dates)
+      // 1. Delete all swap requests for the current month FIRST
+      // This is crucial because shift_swap_requests has foreign keys pointing to shifts.
+      // If we delete shifts first, the swap requests might be orphaned or block deletion depending on constraints.
       const { error: swapDeleteError } = await supabase
         .from('shift_swap_requests')
         .delete()
@@ -538,8 +531,17 @@ export default function App() {
 
       if (swapDeleteError) {
         console.error('Error deleting swap requests:', swapDeleteError);
-        // We don't throw here to allow the reset process to continue even if swap history fails to clear
+        throw swapDeleteError; // Throw here so we know if it fails
       }
+
+      // 2. Delete all shifts for the current month
+      const { error: deleteError } = await supabase
+        .from('shifts')
+        .delete()
+        .gte('date', startDate)
+        .lte('date', endDate);
+        
+      if (deleteError) throw deleteError;
 
       // Clear local states immediately for better UX
       setShifts([]);
