@@ -238,9 +238,7 @@ export default function App() {
     }
   };
 
-  const handleRequestShiftSwap = (staff: Staff, dateStr: string, shift: Shift | null) => {
-    // If admin and NOT published, they use edit modal (handled in Grid)
-    // If admin AND published, they should be able to swap like a user
+  const handleRequestShiftMove = (staff: Staff, dateStr: string, shift: Shift | null) => {
     if (isAdmin && !rosterStatus?.is_published) return; 
     
     const currentUserStaff = staffList.find(s => s.name === user?.name);
@@ -253,10 +251,8 @@ export default function App() {
 
     if (staff.id === currentUserStaff.id) {
       // Clicking own row
-      if (!shift) {
-        // Clicking empty cell in own row -> can't be a source for swap
-        return;
-      }
+      if (!shift) return; // Can't move an empty slot
+      
       if (shiftToSwap?.id === shift.id) {
         setShiftToSwap(null);
       } else {
@@ -264,29 +260,20 @@ export default function App() {
       }
     } else {
       // Clicking someone else's row
-      if (shift) {
-        // Clicking an existing shift
-        if (targetShiftToSwap?.id === shift.id) {
-          setTargetShiftToSwap(null);
-        } else {
-          setTargetShiftToSwap(shift);
-        }
-      } else {
-        // Clicking an empty cell -> Create a "virtual" shift object for the target
-        // This allows requesting to move to an empty slot
-        const virtualShift: Shift = {
-          id: `empty-${staff.id}-${dateStr}`,
-          staff_id: staff.id,
-          date: dateStr,
-          shift_type: 'O' // Use 'O' (Off) or some indicator for empty
-        };
-        
-        if (targetShiftToSwap?.id === virtualShift.id) {
-          setTargetShiftToSwap(null);
-        } else {
-          setTargetShiftToSwap(virtualShift);
-        }
+      if (!shiftToSwap) {
+        alert('กรุณาเลือกเวรของคุณที่ต้องการย้ายก่อน');
+        return;
       }
+
+      const targetShift = shift || {
+        id: `empty-${staff.id}-${dateStr}`,
+        staff_id: staff.id,
+        date: dateStr,
+        shift_type: 'O'
+      };
+      
+      setTargetShiftToSwap(targetShift);
+      setIsShiftSwapRequestModalOpen(true); // Open modal immediately when target is selected
     }
   };
 
@@ -670,7 +657,7 @@ export default function App() {
                   isPublished={rosterStatus?.is_published ?? false}
                   user={user}
                   onCellClick={handleCellClick}
-                  onShiftSwapRequest={handleRequestShiftSwap}
+                  onShiftSwapRequest={handleRequestShiftMove}
                   selectedShiftForMove={selectedShiftForMove}
                   shiftToSwap={shiftToSwap}
                   targetShiftToSwap={targetShiftToSwap}

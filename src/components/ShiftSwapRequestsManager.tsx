@@ -46,7 +46,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       setPendingRequests(data || []);
     } catch (err) {
       console.error('Error fetching pending swap requests:', err);
-      setError('ไม่สามารถดึงคำขอสลับเวรได้');
+      setError('ไม่สามารถดึงคำขอย้ายเวรได้');
     } finally {
       setLoading(false);
     }
@@ -192,10 +192,10 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
                 {/* Target's Shift */}
                 <div className="border border-gray-300 rounded-lg p-3 bg-white">
-                  <h3 className="text-md font-semibold text-gray-800 mb-2">ต้องการย้ายไปรวมกับ</h3>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">ต้องการย้ายไปให้</h3>
                   <p className="text-sm text-gray-700 mb-1">ชื่อ: {getStaffName(request.target_staff_id)}</p>
                   <p className="text-sm text-gray-700 mb-1">วันที่: {formatDateSafe(request.target_date)}</p>
-                  <p className="text-sm text-gray-700">กะ: 
+                  <p className="text-sm text-gray-700">กะเดิม: 
                     <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium ml-1", getShiftColor(request.target_shift_type))}>
                       {getShiftLabel(request.target_shift_type)} ({request.target_shift_type})
                     </span>

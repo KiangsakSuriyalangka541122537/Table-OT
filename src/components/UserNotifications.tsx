@@ -145,7 +145,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
         action_type: 'SHIFT_SWAP_REJECTED_BY_TARGET'
       });
 
-      alert('ปฏิเสธคำขอสลับเวรแล้ว');
+      alert('ปฏิเสธคำขอย้ายเวรแล้ว');
       fetchUserRequests();
       onUpdate();
       setIsOpen(false);
@@ -198,7 +198,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-            <h3 className="text-sm font-bold text-slate-900">คำขอสลับเวร</h3>
+            <h3 className="text-sm font-bold text-slate-900">คำขอย้ายเวร</h3>
             <div className="flex items-center gap-2">
               <button 
                 onClick={handleManualRefresh}
@@ -234,7 +234,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
                         <p className="text-xs font-bold text-slate-900 truncate">
                           {getStaffName(request.requester_staff_id)}
                         </p>
-                        <p className="text-[10px] text-slate-500">ต้องการสลับเวรกับคุณ</p>
+                        <p className="text-[10px] text-slate-500">ต้องการย้ายเวรมาให้คุณ</p>
                       </div>
                     </div>
 
@@ -264,7 +264,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
                         onClick={() => handleAccept(request)}
                         className="flex-1 py-1.5 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm shadow-emerald-100"
                       >
-                        ยืนยันการสลับ
+                        ยืนยันการรับเวร
                       </button>
                     </div>
                   </div>

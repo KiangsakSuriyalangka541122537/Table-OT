@@ -154,7 +154,7 @@ export function ShiftSwapRequestModal({
             <AlertCircle className="w-6 h-6 text-indigo-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900">ขอย้ายเวร</h2>
-          <p className="text-gray-500 mt-2">กรุณาเลือกกะที่ต้องการย้ายไปรวมด้วย</p>
+          <p className="text-gray-500 mt-2">ยืนยันการย้ายเวรของคุณไปรวมกับคนอื่น</p>
         </div>
 
         {error && (
@@ -175,7 +175,7 @@ export function ShiftSwapRequestModal({
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
                     <span className="text-emerald-600 font-bold text-xs">{selectedRequesterShift.shift_type}</span>
                   </div>
-                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของคุณ</p>
+                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">เวรของคุณ</p>
                   <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
                   {requesterPairedShift && (
                     <p className="text-[10px] text-emerald-600 mt-1">
@@ -194,7 +194,7 @@ export function ShiftSwapRequestModal({
                       {selectedTargetShift.id.startsWith('empty-') ? '-' : selectedTargetShift.shift_type}
                     </span>
                   </div>
-                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของ {selectedTargetStaff.name ? selectedTargetStaff.name.split(' ')[0] : 'เพื่อน'}</p>
+                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">ย้ายไปให้ {selectedTargetStaff.name ? selectedTargetStaff.name.split(' ')[0] : 'เพื่อน'}</p>
                   <p className="font-bold text-emerald-900 text-sm">
                     {selectedTargetShift.id.startsWith('empty-') ? 'ช่องว่าง' : format(new Date(selectedTargetShift.date), 'dd/MM')}
                   </p>
@@ -204,6 +204,10 @@ export function ShiftSwapRequestModal({
                     </p>
                   )}
                 </div>
+              </div>
+              <div className="bg-white/50 rounded-lg p-3 text-[10px] text-emerald-800 border border-emerald-100/50">
+                <p className="font-bold mb-1">💡 ข้อมูลการย้าย:</p>
+                <p>เวรของคุณจะถูกนำไปรวมกับเวรของ {selectedTargetStaff.name} ในวันดังกล่าว หาก {selectedTargetStaff.name} มีเวรอยู่แล้ว เวรของคุณจะถูกเพิ่มเข้าไป (เช่น {selectedTargetShift.shift_type} → {selectedRequesterShift.shift_type}/{selectedTargetShift.shift_type})</p>
               </div>
             </div>
           )}
@@ -234,7 +238,7 @@ export function ShiftSwapRequestModal({
 
               {/* Target Staff Selection */}
               <div>
-                <label htmlFor="targetStaff" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">พนักงานที่ต้องการสลับด้วย</label>
+                <label htmlFor="targetStaff" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">พนักงานที่ต้องการย้ายไปให้</label>
                 <select
                   id="targetStaff"
                   value={targetStaffId}
@@ -254,7 +258,7 @@ export function ShiftSwapRequestModal({
               {/* Target Shift Selection */}
               {targetStaffId && (
                 <div>
-                  <label htmlFor="targetShift" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">กะของเขาที่ต้องการ</label>
+                  <label htmlFor="targetShift" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">เลือกวันที่/เวรของเขา</label>
                   <select
                     id="targetShift"
                     value={targetShiftId}
