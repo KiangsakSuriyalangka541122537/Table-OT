@@ -4,6 +4,7 @@ import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../t
 import { format, isValid } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
+import { applyShiftOperations, generateMoveOperations } from '../lib/shiftOperations';
 
 interface ShiftSwapRequestsManagerProps {
   allStaff: Staff[];
@@ -56,53 +57,16 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setError(null);
     try {
       // 1. Swap Logic
-      if (request.requester_shift_id && request.target_shift_id) {
-        // Case A: Moving requester's shift to a cell that already has a shift
-        // This is a "Merge" operation, not a "Swap" anymore based on user request.
-        
-        // 1. Get the current target shift to know its existing types
-        const { data: targetShiftData, error: targetFetchError } = await supabase
-          .from('shifts')
-          .select('shift_type')
-          .eq('id', request.target_shift_id)
-          .single();
+      if (request.requester_shift_id) {
+        const operations = generateMoveOperations(
+          request.requester_staff_id,
+          request.requester_date,
+          request.target_staff_id,
+          request.target_date,
+          request.requester_shift_type
+        );
 
-        if (targetFetchError) throw new Error(`Failed to fetch target shift: ${targetFetchError.message}`);
-
-        // 2. Calculate new merged shift type
-        const existingTargetTypes = targetShiftData.shift_type ? targetShiftData.shift_type.split(',') : [];
-        const typeToMove = request.requester_shift_type;
-        
-        // Simple merge logic (similar to utils/shiftUtils.ts)
-        const newTypes = [...new Set([...existingTargetTypes, typeToMove])];
-        
-        if (newTypes.length > 4) {
-             throw new Error("ไม่สามารถรวมเวรได้เนื่องจากเกิน 4 กะ");
-        }
-        
-        const newShiftTypeStr = newTypes.join(',');
-
-        // 3. Update the target shift with the merged types
-        const { error: errorUpdateTarget } = await supabase.from('shifts').update({
-          shift_type: newShiftTypeStr
-        }).eq('id', request.target_shift_id);
-
-        if (errorUpdateTarget) throw new Error(`Failed to update target shift with merged types: ${errorUpdateTarget.message}`);
-
-        // 4. Delete the requester's original shift since it has been moved/merged
-        const { error: errorDeleteRequester } = await supabase.from('shifts').delete().eq('id', request.requester_shift_id);
-        
-        if (errorDeleteRequester) throw new Error(`Failed to delete requester shift after merge: ${errorDeleteRequester.message}`);
-
-      } else if (request.requester_shift_id && !request.target_shift_id) {
-        // Case B: Moving Requester's Shift to an Empty Slot
-        
-        const { error: error3 } = await supabase.from('shifts').update({
-          staff_id: request.target_staff_id,
-          date: request.target_date
-        }).eq('id', request.requester_shift_id);
-
-        if (error3) throw new Error(`Failed to move shift: ${error3.message}`);
+        await applyShiftOperations(operations);
       }
 
       // 2. Update request status
