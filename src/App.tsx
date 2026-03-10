@@ -14,7 +14,6 @@ import { ShiftSwapRequestModal } from './components/ShiftSwapRequestModal';
 import { ShiftSwapHistory } from './components/ShiftSwapHistory';
 import { ExportPDFTemplate } from './components/ExportPDFTemplate';
 import { RefreshCw } from 'lucide-react';
-import clsx from 'clsx';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
@@ -46,8 +45,6 @@ export default function App() {
 
   // Shift Move/Swap state (Admin)
   const [selectedShiftForMove, setSelectedShiftForMove] = useState<{ staffId: string; dateStr: string; shiftType: ShiftType | undefined } | null>(null);
-
-  const [displayMode, setDisplayMode] = useState<'mode1' | 'mode2'>('mode1');
 
   const monthKey = format(currentMonth, 'yyyy-MM');
   const isAdmin = user?.role === 'admin';
@@ -94,51 +91,6 @@ export default function App() {
 
           if (duplicates.length > 0) {
             await supabase.from('staff').delete().in('id', duplicates);
-            fetchData();
-          }
-        }
-
-        // 3. Cleanup duplicate shifts
-        const { data: allShifts } = await supabase.from('shifts').select('*');
-        if (allShifts) {
-          const shiftMap = new Map<string, Shift>();
-          const shiftsToDelete: string[] = [];
-          const shiftsToUpdate: { id: string; shift_type: string }[] = [];
-
-          for (const shift of allShifts) {
-            const key = `${shift.staff_id}_${shift.date}`;
-            if (shiftMap.has(key)) {
-              const existing = shiftMap.get(key)!;
-              const existingTypes = existing.shift_type ? existing.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-              const newTypes = shift.shift_type ? shift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-              
-              const combined = Array.from(new Set([...existingTypes, ...newTypes]));
-              const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3, 'O': 4 };
-              combined.sort((a, b) => (order[a] || 99) - (order[b] || 99));
-              
-              const newShiftTypeStr = combined.join(',');
-              
-              if (existing.shift_type !== newShiftTypeStr) {
-                existing.shift_type = newShiftTypeStr;
-                shiftsToUpdate.push({ id: existing.id, shift_type: newShiftTypeStr });
-              }
-              
-              shiftsToDelete.push(shift.id);
-            } else {
-              shiftMap.set(key, { ...shift });
-            }
-          }
-
-          for (const update of shiftsToUpdate) {
-            await supabase.from('shifts').update({ shift_type: update.shift_type }).eq('id', update.id);
-          }
-          
-          if (shiftsToDelete.length > 0) {
-            // Delete in chunks of 100
-            for (let i = 0; i < shiftsToDelete.length; i += 100) {
-              const chunk = shiftsToDelete.slice(i, i + 100);
-              await supabase.from('shifts').delete().in('id', chunk);
-            }
             fetchData();
           }
         }
@@ -241,14 +193,11 @@ export default function App() {
 
         if (sourceShift && targetShift) {
           // Check if merge is possible
-          const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-          const shiftToMove = selectedShiftForMove.shiftType;
+          const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
+          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
           
-          if (!shiftToMove) return;
-
           // Combine unique types
-          let mergedTypes = [...targetTypes, shiftToMove];
+          let mergedTypes = [...targetTypes, ...sourceTypes];
           mergedTypes = Array.from(new Set(mergedTypes));
           
           const canMerge = mergedTypes.length <= 3;
@@ -257,7 +206,7 @@ export default function App() {
           
           if (canMerge) {
              // Auto-merge if moving 'M' into a cell that doesn't have 'M'
-             if (shiftToMove === 'M' && !targetTypes.includes('M')) {
+             if (selectedShiftForMove.shiftType === 'M' && !targetTypes.includes('M')) {
                 action = 'merge';
              } else {
                 // If merge is possible, prioritize merge
@@ -282,16 +231,9 @@ export default function App() {
             const newShiftTypeStr = mergedTypes.join(',');
 
             await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
-            
-            const newSourceTypes = sourceTypes.filter(t => t !== shiftToMove);
-            if (newSourceTypes.length === 0) {
-              await supabase.from('shifts').delete().eq('id', sourceShift.id);
-            } else {
-              await supabase.from('shifts').update({ shift_type: newSourceTypes.join(',') }).eq('id', sourceShift.id);
-            }
+            await supabase.from('shifts').delete().eq('id', sourceShift.id);
           } else if (action === 'swap') {
             // Swap: Update source to temp date, target to source, source to target
-            // Note: This swaps the ENTIRE cell.
             const tempDate = '2000-01-01';
             await supabase.from('shifts').update({ date: tempDate }).eq('id', sourceShift.id);
             await supabase.from('shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
@@ -299,23 +241,7 @@ export default function App() {
           }
         } else if (sourceShift && !targetShift) {
           // Move
-          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
-          const shiftToMove = selectedShiftForMove.shiftType;
-          
-          if (shiftToMove) {
-            const newSourceTypes = sourceTypes.filter(t => t !== shiftToMove);
-            if (newSourceTypes.length === 0) {
-              await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
-            } else {
-              // Create new shift for the moved one, keep the rest in source
-              await supabase.from('shifts').insert({
-                staff_id: staffId,
-                date: dateStr,
-                shift_type: shiftToMove
-              });
-              await supabase.from('shifts').update({ shift_type: newSourceTypes.join(',') }).eq('id', sourceShift.id);
-            }
-          }
+          await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
         }
         
         await fetchData(); // Refresh shifts
@@ -438,7 +364,7 @@ export default function App() {
     try {
       // Find current shift for this cell
       const currentShift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
-      const currentTypes = currentShift && currentShift.shift_type ? currentShift.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const currentTypes = currentShift && currentShift.shift_type ? currentShift.shift_type.split(',') : [];
 
       // 1. Handle Deletion (null)
       if (newShiftType === null) {
@@ -500,7 +426,7 @@ export default function App() {
                  // Check if N next day already exists for THIS staff
                  const myNextNight = shifts.find(s => s.date === nextDay && s.staff_id === staffId);
                  if (!myNextNight || !myNextNight.shift_type?.includes('N')) {
-                   const nextDayTypes = myNextNight && myNextNight.shift_type ? myNextNight.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+                   const nextDayTypes = myNextNight && myNextNight.shift_type ? myNextNight.shift_type.split(',') : [];
                    nextDayTypes.push('N');
                    nextDayTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
                    const nextDayStr = nextDayTypes.join(',');
@@ -533,7 +459,7 @@ export default function App() {
                
               const myPrevA = shifts.find(s => s.date === prevDay && s.staff_id === staffId);
               if (!myPrevA || !myPrevA.shift_type?.includes('A')) {
-                const prevDayTypes = myPrevA && myPrevA.shift_type ? myPrevA.shift_type.split(',').map(t => t.trim()).filter(Boolean) : [];
+                const prevDayTypes = myPrevA && myPrevA.shift_type ? myPrevA.shift_type.split(',') : [];
                 prevDayTypes.push('A');
                 prevDayTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
                 const prevDayStr = prevDayTypes.join(',');
@@ -779,47 +705,20 @@ export default function App() {
                 </h2>
                 <p className="text-slate-500 mt-1">ตารางเวรประจำเดือน</p>
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
-                  <button
-                    onClick={() => setDisplayMode('mode1')}
-                    className={clsx(
-                      "px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200",
-                      displayMode === 'mode1' 
-                        ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200/50" 
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                    )}
-                  >
-                    รูปแบบที่ 1 (ปกติ)
-                  </button>
-                  <button
-                    onClick={() => setDisplayMode('mode2')}
-                    className={clsx(
-                      "px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200",
-                      displayMode === 'mode2' 
-                        ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200/50" 
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                    )}
-                  >
-                    รูปแบบที่ 2 (รวบกะ)
-                  </button>
+              <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-1.5 px-2">
+                  <div className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-sm shadow-blue-200"></div>
+                  <span className="text-xs font-semibold text-slate-600">เช้า (M)</span>
                 </div>
-
-                <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-                  <div className="flex items-center gap-1.5 px-2">
-                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-sm shadow-blue-200"></div>
-                    <span className="text-xs font-semibold text-slate-600">เช้า (M)</span>
-                  </div>
-                  <div className="w-px h-3 bg-slate-200"></div>
-                  <div className="flex items-center gap-1.5 px-2">
-                    <div className="w-2.5 h-2.5 bg-orange-500 rounded-full shadow-sm shadow-orange-200"></div>
-                    <span className="text-xs font-semibold text-slate-600">บ่าย (A)</span>
-                  </div>
-                  <div className="w-px h-3 bg-slate-200"></div>
-                  <div className="flex items-center gap-1.5 px-2">
-                    <div className="w-2.5 h-2.5 bg-purple-500 rounded-full shadow-sm shadow-purple-200"></div>
-                    <span className="text-xs font-semibold text-slate-600">ดึก (N)</span>
-                  </div>
+                <div className="w-px h-3 bg-slate-200"></div>
+                <div className="flex items-center gap-1.5 px-2">
+                  <div className="w-2.5 h-2.5 bg-orange-500 rounded-full shadow-sm shadow-orange-200"></div>
+                  <span className="text-xs font-semibold text-slate-600">บ่าย (A)</span>
+                </div>
+                <div className="w-px h-3 bg-slate-200"></div>
+                <div className="flex items-center gap-1.5 px-2">
+                  <div className="w-2.5 h-2.5 bg-purple-500 rounded-full shadow-sm shadow-purple-200"></div>
+                  <span className="text-xs font-semibold text-slate-600">ดึก (N)</span>
                 </div>
               </div>
             </div>
@@ -914,8 +813,6 @@ export default function App() {
                   targetShiftToSwap={targetShiftToSwap}
                   pendingSwaps={pendingSwaps}
                   approvedSwaps={approvedSwaps}
-                  originalAssignments={rosterStatus?.original_assignments || []}
-                  displayMode={displayMode}
                 />
                 
                 <ShiftSwapHistory 

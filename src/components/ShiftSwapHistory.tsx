@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { ShiftSwapRequest, ShiftSwapStatus, Staff } from '../types';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { ArrowRightLeft, ArrowRight, Calendar, User, Clock } from 'lucide-react';
+import { ArrowRightLeft, Calendar, User, Clock } from 'lucide-react';
 import clsx from 'clsx';
 
 interface ShiftSwapHistoryProps {
@@ -115,57 +115,48 @@ export function ShiftSwapHistory({ staffList, currentMonth, lastUpdated }: Shift
              ยังไม่มีประวัติการย้ายเวรในเดือนนี้
            </div>
         ) : (
-          history.map((item) => {
-            const isMove = !item.target_shift_id;
-            return (
-              <div key={item.id} className="p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm w-full">
-                    {/* Requester Side */}
-                    <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex-1 min-w-0">
-                      <span className="font-bold text-slate-700 truncate">{getStaffName(item.requester_staff_id)}</span>
-                      <span className={clsx(
-                        "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
-                        item.requester_shift_type === 'M' ? "bg-blue-100 text-blue-700" :
-                        item.requester_shift_type === 'A' ? "bg-orange-100 text-orange-700" :
-                        item.requester_shift_type === 'N' ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-600"
-                      )}>
-                        {getShiftLabel(item.requester_shift_type)}
-                      </span>
-                      <span className="text-slate-500 text-xs shrink-0">{formatDate(item.requester_date)}</span>
-                    </div>
+          history.map((item) => (
+            <div key={item.id} className="p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm w-full">
+                  {/* Requester Side */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex-1 min-w-0">
+                    <span className="font-bold text-slate-700 truncate">{getStaffName(item.requester_staff_id)}</span>
+                    <span className={clsx(
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
+                      item.requester_shift_type === 'M' ? "bg-blue-100 text-blue-700" :
+                      item.requester_shift_type === 'A' ? "bg-orange-100 text-orange-700" :
+                      item.requester_shift_type === 'N' ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-600"
+                    )}>
+                      {getShiftLabel(item.requester_shift_type)}
+                    </span>
+                    <span className="text-slate-500 text-xs shrink-0">{formatDate(item.requester_date)}</span>
+                  </div>
 
-                    {isMove ? (
-                      <ArrowRight className="w-4 h-4 text-emerald-500 hidden sm:block shrink-0" />
-                    ) : (
-                      <ArrowRightLeft className="w-4 h-4 text-slate-300 hidden sm:block shrink-0" />
-                    )}
-                    
-                    {/* Target Side */}
-                    <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex-1 min-w-0">
-                      <span className="font-bold text-slate-700 truncate">{getStaffName(item.target_staff_id)}</span>
-                      {!isMove && (
-                        <span className={clsx(
-                          "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
-                          item.target_shift_type === 'M' ? "bg-blue-100 text-blue-700" :
-                          item.target_shift_type === 'A' ? "bg-orange-100 text-orange-700" :
-                          item.target_shift_type === 'N' ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-600"
-                        )}>
-                          {getShiftLabel(item.target_shift_type)}
-                        </span>
-                      )}
-                      <span className="text-slate-500 text-xs shrink-0">{formatDate(item.target_date)}</span>
-                    </div>
+                  <ArrowRightLeft className="w-4 h-4 text-slate-300 hidden sm:block shrink-0" />
+                  
+                  {/* Target Side */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex-1 min-w-0">
+                    <span className="font-bold text-slate-700 truncate">{getStaffName(item.target_staff_id)}</span>
+                    <span className={clsx(
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
+                      item.target_shift_type === 'M' ? "bg-blue-100 text-blue-700" :
+                      item.target_shift_type === 'A' ? "bg-orange-100 text-orange-700" :
+                      item.target_shift_type === 'N' ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-600"
+                    )}>
+                      {getShiftLabel(item.target_shift_type)}
+                    </span>
+                    <span className="text-slate-500 text-xs shrink-0">{formatDate(item.target_date)}</span>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 whitespace-nowrap ml-auto sm:ml-0 shrink-0">
-                  <Clock className="w-3 h-3" />
-                  <span>{format(new Date(item.updated_at), 'd MMM HH:mm', { locale: th })}</span>
-                </div>
               </div>
-            );
-          })
+
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 whitespace-nowrap ml-auto sm:ml-0 shrink-0">
+                <Clock className="w-3 h-3" />
+                <span>{format(new Date(item.updated_at), 'd MMM HH:mm', { locale: th })}</span>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

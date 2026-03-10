@@ -19,8 +19,6 @@ interface GridProps {
   targetShiftToSwap?: Shift | null;
   pendingSwaps?: ShiftSwapRequest[];
   approvedSwaps?: ShiftSwapRequest[];
-  originalAssignments?: Shift[];
-  displayMode?: 'mode1' | 'mode2';
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -50,9 +48,7 @@ export function Grid({
   shiftToSwap,
   targetShiftToSwap,
   pendingSwaps = [],
-  approvedSwaps = [],
-  originalAssignments = [],
-  displayMode = 'mode1'
+  approvedSwaps = []
 }: GridProps) {
   const [hoveredSwapIds, setHoveredSwapIds] = React.useState<string[]>([]);
   const daysInMonth = getDaysInMonth(currentMonth);
@@ -64,59 +60,7 @@ export function Grid({
   const getShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
     const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
     if (!shift || !shift.shift_type) return [];
-    return shift.shift_type.split(',').map(s => s.trim()).filter(Boolean) as ShiftType[];
-  };
-
-  const getOriginalShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
-    if (!isPublished || !originalAssignments || originalAssignments.length === 0) return [];
-    const shift = originalAssignments.find(s => s.staff_id === staffId && s.date === dateStr);
-    if (!shift || !shift.shift_type) return [];
-    return shift.shift_type.split(',').map(s => s.trim()).filter(Boolean) as ShiftType[];
-  };
-
-  const getDisplayShifts = (staffId: string, dateStr: string, sourceShifts: Shift[]): ShiftType[] => {
-    const getShifts = (dStr: string) => {
-      const shift = sourceShifts.find(s => s.staff_id === staffId && s.date === dStr);
-      if (!shift || !shift.shift_type) return [];
-      return shift.shift_type.split(',').map(s => s.trim()).filter(Boolean) as ShiftType[];
-    };
-
-    const currentShifts = getShifts(dateStr);
-    
-    if (displayMode === 'mode1') {
-      const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3, 'O': 4 };
-      return [...currentShifts].sort((a, b) => (order[a] || 99) - (order[b] || 99));
-    }
-
-    const date = new Date(dateStr);
-    const prevDateStr = format(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1), 'yyyy-MM-dd');
-    const prevPrevDateStr = format(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 2), 'yyyy-MM-dd');
-    const nextDateStr = format(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1), 'yyyy-MM-dd');
-
-    const prevShifts = getShifts(prevDateStr);
-    const prevPrevShifts = getShifts(prevPrevDateStr);
-    const nextShifts = getShifts(nextDateStr);
-
-    let displayShifts: ShiftType[] = [...currentShifts];
-
-    if (displayShifts.includes('N') && prevShifts.includes('A')) {
-      displayShifts = displayShifts.filter(s => s !== 'N');
-    }
-    if (displayShifts.includes('M') && prevShifts.includes('N') && !prevPrevShifts.includes('A')) {
-      displayShifts = displayShifts.filter(s => s !== 'M');
-    }
-
-    if (currentShifts.includes('A') && nextShifts.includes('N')) {
-      if (!displayShifts.includes('N')) displayShifts.push('N');
-    }
-    if (currentShifts.includes('N') && !prevShifts.includes('A') && nextShifts.includes('M')) {
-      if (!displayShifts.includes('M')) displayShifts.push('M');
-    }
-
-    const order: Record<ShiftType, number> = { 'M': 1, 'A': 2, 'N': 3, 'O': 4 };
-    displayShifts.sort((a, b) => order[a] - order[b]);
-
-    return displayShifts;
+    return shift.shift_type.split(',') as ShiftType[];
   };
 
   return (
@@ -167,7 +111,7 @@ export function Grid({
             
             staffShifts.forEach(s => {
               if (s.shift_type) {
-                const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+                const types = s.shift_type.split(',');
                 if (types.includes('M')) mCount++;
                 if (types.includes('A')) aCount++;
                 if (types.includes('N')) nCount++;
@@ -195,7 +139,7 @@ export function Grid({
                 </td>
                 {days.map((day) => {
                   const dateStr = format(day, 'yyyy-MM-dd');
-                  const currentShifts = getDisplayShifts(staff.id, dateStr, shifts);
+                  const currentShifts = getShiftsForStaffAndDate(staff.id, dateStr);
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
                   const isSelectedForMove = selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
@@ -223,8 +167,6 @@ export function Grid({
                     )
                   );
 
-                  const originalShifts = getDisplayShifts(staff.id, dateStr, originalAssignments);
-
                   return (
                     <td
                       key={dateStr}
@@ -245,8 +187,7 @@ export function Grid({
                         
                         // If admin and NOT published, allow direct editing
                         if (isAdmin && !isPublished) {
-                          const actualShifts = getShiftsForStaffAndDate(staff.id, dateStr);
-                          onCellClick(staff.id, dateStr, actualShifts);
+                          onCellClick(staff.id, dateStr, currentShifts);
                         } 
                         // If logged in (admin or user) and published (or not admin), allow swap request
                         else if (user && staffObj) {
@@ -272,24 +213,20 @@ export function Grid({
                           currentShifts.length === 2 ? "min-h-[72px]" : "min-h-[100px]",
                           currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100" : "border-slate-200"
                         )}>
-                          {currentShifts.map((shiftType, idx) => {
-                            const isAdded = isPublished && !originalShifts.includes(shiftType);
-                            return (
-                              <div key={`${dateStr}-${idx}`} className={clsx(
-                                "w-full flex-1 flex items-center justify-center text-[11px] font-bold transition-all py-1 relative",
-                                idx > 0 && "border-t border-slate-200",
-                                shiftColors[shiftType],
-                                isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
-                                isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
-                                isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
-                                isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
-                                isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
-                              )}>
-                                {shiftLabels[shiftType]}
-                                {isAdded && <span className="text-[8px] text-rose-600 ml-0.5" title="เวรที่ถูกย้ายมา">(ย้าย)</span>}
-                              </div>
-                            );
-                          })}
+                          {currentShifts.map((shiftType, idx) => (
+                            <div key={`${dateStr}-${idx}`} className={clsx(
+                              "w-full flex-1 flex items-center justify-center text-[11px] font-bold transition-all py-1",
+                              idx > 0 && "border-t border-slate-200",
+                              shiftColors[shiftType],
+                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
+                              isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
+                              isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
+                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
+                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
+                            )}>
+                              {shiftLabels[shiftType]}
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className={clsx(
@@ -332,7 +269,7 @@ export function Grid({
                     let m = 0, a = 0, n = 0;
                     staffShifts.forEach(s => {
                       if (s.shift_type) {
-                        const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+                        const types = s.shift_type.split(',');
                         if (types.includes('M')) m++;
                         if (types.includes('A')) a++;
                         if (types.includes('N')) n++;
@@ -349,7 +286,7 @@ export function Grid({
                     let m = 0, a = 0, n = 0;
                     staffShifts.forEach(s => {
                       if (s.shift_type) {
-                        const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+                        const types = s.shift_type.split(',');
                         if (types.includes('M')) m++;
                         if (types.includes('A')) a++;
                         if (types.includes('N')) n++;
