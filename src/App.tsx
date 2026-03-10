@@ -813,6 +813,7 @@ export default function App() {
                   targetShiftToSwap={targetShiftToSwap}
                   pendingSwaps={pendingSwaps}
                   approvedSwaps={approvedSwaps}
+                  originalAssignments={rosterStatus?.original_assignments || []}
                 />
                 
                 <ShiftSwapHistory 

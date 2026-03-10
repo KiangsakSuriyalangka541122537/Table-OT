@@ -19,6 +19,7 @@ interface GridProps {
   targetShiftToSwap?: Shift | null;
   pendingSwaps?: ShiftSwapRequest[];
   approvedSwaps?: ShiftSwapRequest[];
+  originalAssignments?: Shift[];
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -48,7 +49,8 @@ export function Grid({
   shiftToSwap,
   targetShiftToSwap,
   pendingSwaps = [],
-  approvedSwaps = []
+  approvedSwaps = [],
+  originalAssignments = []
 }: GridProps) {
   const [hoveredSwapIds, setHoveredSwapIds] = React.useState<string[]>([]);
   const daysInMonth = getDaysInMonth(currentMonth);
@@ -59,6 +61,13 @@ export function Grid({
 
   const getShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
     const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
+    if (!shift || !shift.shift_type) return [];
+    return shift.shift_type.split(',') as ShiftType[];
+  };
+
+  const getOriginalShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
+    if (!isPublished || !originalAssignments || originalAssignments.length === 0) return [];
+    const shift = originalAssignments.find(s => s.staff_id === staffId && s.date === dateStr);
     if (!shift || !shift.shift_type) return [];
     return shift.shift_type.split(',') as ShiftType[];
   };
@@ -167,6 +176,8 @@ export function Grid({
                     )
                   );
 
+                  const originalShifts = getOriginalShiftsForStaffAndDate(staff.id, dateStr);
+
                   return (
                     <td
                       key={dateStr}
@@ -213,20 +224,24 @@ export function Grid({
                           currentShifts.length === 2 ? "min-h-[72px]" : "min-h-[100px]",
                           currentShifts.length > 1 ? "border-2 border-blue-600 shadow-md shadow-blue-100" : "border-slate-200"
                         )}>
-                          {currentShifts.map((shiftType, idx) => (
-                            <div key={`${dateStr}-${idx}`} className={clsx(
-                              "w-full flex-1 flex items-center justify-center text-[11px] font-bold transition-all py-1",
-                              idx > 0 && "border-t border-slate-200",
-                              shiftColors[shiftType],
-                              isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
-                              isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
-                              isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
-                              isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
-                              isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
-                            )}>
-                              {shiftLabels[shiftType]}
-                            </div>
-                          ))}
+                          {currentShifts.map((shiftType, idx) => {
+                            const isAdded = isPublished && !originalShifts.includes(shiftType);
+                            return (
+                              <div key={`${dateStr}-${idx}`} className={clsx(
+                                "w-full flex-1 flex items-center justify-center text-[11px] font-bold transition-all py-1 relative",
+                                idx > 0 && "border-t border-slate-200",
+                                shiftColors[shiftType],
+                                isSelectedForMove && selectedShiftForMove?.shiftType === shiftType && "ring-2 ring-indigo-500 ring-inset z-10 relative",
+                                isSelectedRequester && "ring-2 ring-emerald-500 ring-inset z-10 relative",
+                                isSelectedTarget && "ring-2 ring-amber-500 ring-inset z-10 relative",
+                                isPendingSwap && "opacity-100 ring-2 ring-yellow-600 ring-inset z-10 relative font-extrabold",
+                                isHoveredSwap && "opacity-100 ring-2 ring-blue-600 ring-inset z-10 relative font-extrabold"
+                              )}>
+                                {shiftLabels[shiftType]}
+                                {isAdded && <span className="text-[8px] text-rose-600 ml-0.5" title="เวรที่ถูกย้ายมา">(ย้าย)</span>}
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className={clsx(
