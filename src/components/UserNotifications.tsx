@@ -23,8 +23,6 @@ const shiftColors: Record<ShiftType, string> = {
   O: 'bg-gray-100 text-gray-500 border-gray-200',
 };
 
-import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/shiftOperations';
-
 export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserNotificationsProps) {
   const [requests, setRequests] = useState<ShiftSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +31,9 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const notificationRef = React.useRef<HTMLDivElement>(null);
 
   const currentUserStaff = allStaff.find(s => s.name === user.name);
+  // If admin, they might want to see all requests? 
+  // But the requirement says "swap shifts like others", so they act as a user.
+  // So we only show requests targeting them.
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -70,6 +71,8 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
 
   const fetchUserRequests = async () => {
     if (!currentUserStaff) return;
+    // Don't set loading to true on background polls to avoid UI flickering
+    // Only set loading on initial fetch or manual refresh
     
     try {
       const { data, error } = await supabase
@@ -83,6 +86,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       setRequests(data || []);
     } catch (err) {
       console.error('Error fetching user notifications:', err);
+      // Don't show error on every poll failure to avoid annoyance
     } finally {
       setLoading(false);
     }
@@ -96,22 +100,169 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
   const handleAccept = async (request: ShiftSwapRequest) => {
     setLoading(true);
     try {
-      // 1. Generate and apply shift operations immediately
-      const types = request.requester_shift_type.split(',');
-      const allOperations: ShiftOperation[] = [];
-      for (const type of types) {
-        const operations = generateMoveOperations(
-          request.requester_staff_id,
-          request.requester_date,
-          request.target_staff_id,
-          request.target_date,
-          type.trim() as ShiftType
-        );
-        allOperations.push(...operations);
-      }
-      await applyShiftOperations(allOperations);
+      // Helper to find current shift ID for staff and date
+      const findShiftId = async (staffId: string, date: string, shiftType?: string) => {
+        let query = supabase.from('shifts').select('id, shift_type').eq('staff_id', staffId).eq('date', date);
+        if (shiftType) {
+          query = query.ilike('shift_type', `%${shiftType}%`);
+        }
+        const { data } = await query;
+        return data?.[0]?.id || null;
+      };
 
-      // 2. Update request status to APPROVED
+      // 1. Execute Swap Logic Immediately
+      // We use staff_id and date to find the current shift records to be swapped,
+      // as the IDs in the request might have become stale due to cleanup logic.
+      
+      const currentRequesterShiftId = await findShiftId(request.requester_staff_id, request.requester_date, request.requester_shift_type);
+      const currentTargetShiftId = request.target_shift_id ? await findShiftId(request.target_staff_id, request.target_date, request.target_shift_type) : null;
+
+      if (currentRequesterShiftId && currentTargetShiftId) {
+        // Case A: Swapping two existing shifts
+        
+        // Helper to find paired shift ID
+        const getPairedShiftId = async (shiftId: string) => {
+          const { data: shift } = await supabase.from('shifts').select('*').eq('id', shiftId).single();
+          if (!shift) return null;
+          
+          let pairedDate = '';
+          let pairedType = '';
+          
+          if (shift.shift_type?.includes('A')) {
+            const d = new Date(shift.date);
+            d.setDate(d.getDate() + 1);
+            pairedDate = d.toISOString().split('T')[0];
+            pairedType = 'N';
+          } else if (shift.shift_type?.includes('N')) {
+            const d = new Date(shift.date);
+            d.setDate(d.getDate() - 1);
+            pairedDate = d.toISOString().split('T')[0];
+            pairedType = 'A';
+          } else {
+            return null;
+          }
+
+          const { data: pairedShifts } = await supabase
+            .from('shifts')
+            .select('id, shift_type')
+            .eq('staff_id', shift.staff_id)
+            .eq('date', pairedDate);
+            
+          const pairedShift = pairedShifts?.find(s => s.shift_type?.includes(pairedType));
+          return pairedShift?.id || null;
+        };
+
+        const requesterPairedId = await getPairedShiftId(currentRequesterShiftId);
+        const targetPairedId = await getPairedShiftId(currentTargetShiftId);
+
+        // Use a temporary date to avoid unique constraint violations during swap
+        const TEMP_DATE = '2000-01-01';
+
+        // 1. Move requester's shift to temp date
+        const { error: errTemp1 } = await supabase.from('shifts').update({
+          date: TEMP_DATE
+        }).eq('id', currentRequesterShiftId);
+        if (errTemp1) throw new Error(`Failed to move requester shift to temp: ${errTemp1.message}`);
+
+        // 2. Update Target's Shift -> Assign to Requester Staff
+        const { error: error2 } = await supabase.from('shifts').update({
+          staff_id: request.requester_staff_id
+        }).eq('id', currentTargetShiftId);
+        if (error2) {
+          // Rollback
+          await supabase.from('shifts').update({ date: request.requester_date }).eq('id', currentRequesterShiftId);
+          throw new Error(`Failed to update target shift: ${error2.message}`);
+        }
+
+        // 3. Update Requester's Shift (now at temp date) -> Assign to Target Staff and restore original date
+        const { error: error1 } = await supabase.from('shifts').update({
+          staff_id: request.target_staff_id,
+          date: request.requester_date
+        }).eq('id', currentRequesterShiftId);
+        
+        if (error1) {
+           // Rollback is complex here, but we try our best
+           await supabase.from('shifts').update({ staff_id: request.target_staff_id }).eq('id', currentTargetShiftId);
+           await supabase.from('shifts').update({ date: request.requester_date }).eq('id', currentRequesterShiftId);
+           throw new Error(`Failed to update requester shift: ${error1.message}`);
+        }
+
+        // Handle paired shifts
+        if (requesterPairedId) {
+           await supabase.from('shifts').update({
+            staff_id: request.target_staff_id
+          }).eq('id', requesterPairedId);
+        }
+
+        if (targetPairedId) {
+          await supabase.from('shifts').update({
+           staff_id: request.requester_staff_id
+         }).eq('id', targetPairedId);
+       }
+
+      } else if (currentRequesterShiftId && !currentTargetShiftId) {
+        // Case B: Moving Requester's Shift to an Empty Slot (Target)
+        
+        const { error: error3 } = await supabase.from('shifts').update({
+          staff_id: request.target_staff_id,
+          date: request.target_date
+        }).eq('id', currentRequesterShiftId);
+
+        if (error3) throw new Error(`Failed to move shift: ${error3.message}`);
+
+        // Handle Paired Shift for Case B
+        const { data: shift } = await supabase.from('shifts').select('*').eq('id', currentRequesterShiftId).single();
+        if (shift) {
+          let pairedDate = '';
+          let pairedType = '';
+          let targetPairedDate = ''; // Where the paired shift should move to
+
+          if (shift.shift_type?.includes('A')) {
+            const d = new Date(shift.date);
+            d.setDate(d.getDate() + 1);
+            pairedDate = d.toISOString().split('T')[0];
+            pairedType = 'N';
+
+            const td = new Date(request.target_date);
+            td.setDate(td.getDate() + 1);
+            targetPairedDate = td.toISOString().split('T')[0];
+          } else if (shift.shift_type?.includes('N')) {
+            const d = new Date(shift.date);
+            d.setDate(d.getDate() - 1);
+            pairedDate = d.toISOString().split('T')[0];
+            pairedType = 'A';
+
+            const td = new Date(request.target_date);
+            td.setDate(td.getDate() - 1);
+            targetPairedDate = td.toISOString().split('T')[0];
+          }
+
+          if (pairedDate) {
+             const { data: pairedShifts } = await supabase
+              .from('shifts')
+              .select('id, shift_type')
+              .eq('staff_id', request.requester_staff_id)
+              .eq('date', pairedDate);
+            
+            const pairedShift = pairedShifts?.find(s => s.shift_type?.includes(pairedType));
+            
+            if (pairedShift) {
+              await supabase.from('shifts').update({
+                staff_id: request.target_staff_id,
+                date: targetPairedDate
+              }).eq('id', pairedShift.id);
+            }
+          }
+        }
+      } else {
+        console.warn('Could not find requester shift for swap. It might have been deleted or modified.', {
+          staff_id: request.requester_staff_id,
+          date: request.requester_date,
+          type: request.requester_shift_type
+        });
+      }
+
+      // 2. Update request status to APPROVED directly
       const { error } = await supabase
         .from('shift_swap_requests')
         .update({ 
@@ -123,16 +274,16 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       if (error) throw error;
 
       await supabase.from('logs').insert({
-        message: `Staff ${user.name} accepted move request ${request.id}. Shifts updated immediately.`,
-        action_type: 'SHIFT_MOVE_COMPLETED'
+        message: `Staff ${user.name} accepted swap request ${request.id}. Swap executed immediately.`,
+        action_type: 'SHIFT_SWAP_APPROVED_BY_TARGET'
       });
 
-      alert('ยืนยันการรับเวรเรียบร้อยแล้ว ตารางเวรถูกอัปเดตทันที');
+      alert('ยืนยันการสลับเวรเรียบร้อยแล้ว ข้อมูลในตารางเวรถูกอัปเดตทันที');
       fetchUserRequests();
       onUpdate(); // Refresh the main grid
       setIsOpen(false);
     } catch (err: any) {
-      console.error('Error accepting move request:', err);
+      console.error('Error accepting swap request:', err);
       alert(`เกิดข้อผิดพลาด: ${err.message}`);
     } finally {
       setLoading(false);
@@ -157,7 +308,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
         action_type: 'SHIFT_SWAP_REJECTED_BY_TARGET'
       });
 
-      alert('ปฏิเสธคำขอย้ายเวรแล้ว');
+      alert('ปฏิเสธคำขอสลับเวรแล้ว');
       fetchUserRequests();
       onUpdate();
       setIsOpen(false);
@@ -210,7 +361,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-            <h3 className="text-sm font-bold text-slate-900">คำขอย้ายเวร</h3>
+            <h3 className="text-sm font-bold text-slate-900">คำขอสลับเวร</h3>
             <div className="flex items-center gap-2">
               <button 
                 onClick={handleManualRefresh}
@@ -246,7 +397,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
                         <p className="text-xs font-bold text-slate-900 truncate">
                           {getStaffName(request.requester_staff_id)}
                         </p>
-                        <p className="text-[10px] text-slate-500">ต้องการย้ายเวรมาให้คุณ</p>
+                        <p className="text-[10px] text-slate-500">ต้องการสลับเวรกับคุณ</p>
                       </div>
                     </div>
 
@@ -276,7 +427,7 @@ export function UserNotifications({ user, allStaff, allShifts, onUpdate }: UserN
                         onClick={() => handleAccept(request)}
                         className="flex-1 py-1.5 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm shadow-emerald-100"
                       >
-                        ยืนยันการรับเวร
+                        ยืนยันการสลับ
                       </button>
                     </div>
                   </div>

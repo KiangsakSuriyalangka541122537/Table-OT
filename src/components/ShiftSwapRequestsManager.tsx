@@ -4,7 +4,6 @@ import { Staff, Shift, ShiftType, ShiftSwapRequest, ShiftSwapStatus } from '../t
 import { format, isValid } from 'date-fns';
 import { CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
-import { applyShiftOperations, generateMoveOperations, ShiftOperation } from '../lib/shiftOperations';
 
 interface ShiftSwapRequestsManagerProps {
   allStaff: Staff[];
@@ -46,7 +45,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
       setPendingRequests(data || []);
     } catch (err) {
       console.error('Error fetching pending swap requests:', err);
-      setError('ไม่สามารถดึงคำขอย้ายเวรได้');
+      setError('ไม่สามารถดึงคำขอสลับเวรได้');
     } finally {
       setLoading(false);
     }
@@ -56,20 +55,68 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     setLoading(true);
     setError(null);
     try {
-      // 1. Apply shift changes
-      const types = request.requester_shift_type.split(',');
-      const allOperations: ShiftOperation[] = [];
-      for (const type of types) {
-        const operations = generateMoveOperations(
-          request.requester_staff_id,
-          request.requester_date,
-          request.target_staff_id,
-          request.target_date,
-          type.trim() as ShiftType
-        );
-        allOperations.push(...operations);
+      // Helper to find current shift ID for staff and date
+      const findShiftId = async (staffId: string, date: string, shiftType?: string) => {
+        let query = supabase.from('shifts').select('id, shift_type').eq('staff_id', staffId).eq('date', date);
+        if (shiftType) {
+          query = query.ilike('shift_type', `%${shiftType}%`);
+        }
+        const { data } = await query;
+        return data?.[0]?.id || null;
+      };
+
+      // 1. Swap Logic
+      // We use staff_id and date to find the current shift records to be swapped,
+      // as the IDs in the request might have become stale due to cleanup logic.
+      
+      const currentRequesterShiftId = await findShiftId(request.requester_staff_id, request.requester_date, request.requester_shift_type);
+      const currentTargetShiftId = request.target_shift_id ? await findShiftId(request.target_staff_id, request.target_date, request.target_shift_type) : null;
+
+      if (currentRequesterShiftId && currentTargetShiftId) {
+        // Case A: Swapping two existing shifts
+        
+        // 1. Move requester's shift to a temp date
+        const { error: errorTemp } = await supabase.from('shifts').update({
+          date: '2000-01-01'
+        }).eq('id', currentRequesterShiftId);
+        
+        if (errorTemp) throw new Error(`Failed to move requester shift to temp: ${errorTemp.message}`);
+
+        // 2. Update target's shift to belong to requester (keep target's date)
+        const { error: error2 } = await supabase.from('shifts').update({
+          staff_id: request.requester_staff_id
+        }).eq('id', currentTargetShiftId);
+
+        if (error2) {
+          // Rollback
+          await supabase.from('shifts').update({ date: request.requester_date }).eq('id', currentRequesterShiftId);
+          throw new Error(`Failed to update target shift: ${error2.message}`);
+        }
+
+        // 3. Update requester's shift to belong to target, and restore its original date
+        const { error: error1 } = await supabase.from('shifts').update({
+          staff_id: request.target_staff_id,
+          date: request.requester_date
+        }).eq('id', currentRequesterShiftId);
+        
+        if (error1) throw new Error(`Failed to update requester shift: ${error1.message}`);
+
+      } else if (currentRequesterShiftId && !currentTargetShiftId) {
+        // Case B: Moving Requester's Shift to an Empty Slot
+        
+        const { error: error3 } = await supabase.from('shifts').update({
+          staff_id: request.target_staff_id,
+          date: request.target_date
+        }).eq('id', currentRequesterShiftId);
+
+        if (error3) throw new Error(`Failed to move shift: ${error3.message}`);
+      } else {
+        console.warn('Could not find requester shift for swap approval.', {
+          staff_id: request.requester_staff_id,
+          date: request.requester_date,
+          type: request.requester_shift_type
+        });
       }
-      await applyShiftOperations(allOperations);
 
       // 2. Update request status
       const { error: updateError } = await supabase.from('shift_swap_requests').update({ 
@@ -81,15 +128,15 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
       // 4. Log action
       await supabase.from('logs').insert({
-        message: `Admin approved move request ${request.id} from ${request.requester_staff_id} to ${request.target_staff_id}`,
-        action_type: 'SHIFT_MOVE_APPROVED'
+        message: `Admin approved swap request ${request.id} between ${request.requester_staff_id} and ${request.target_staff_id}`,
+        action_type: 'SHIFT_SWAP_APPROVED'
       });
 
-      alert('อนุมัติคำขอย้ายเวรเรียบร้อยแล้ว');
+      alert('อนุมัติคำขอสลับเวรเรียบร้อยแล้ว');
       fetchPendingRequests();
       onUpdate(); // Refresh main roster grid
     } catch (err) {
-      console.error('Error approving move request:', err);
+      console.error('Error approving swap request:', err);
       setError('เกิดข้อผิดพลาดในการอนุมัติคำขอ');
     } finally {
       setLoading(false);
@@ -107,7 +154,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         action_type: 'SHIFT_SWAP_REJECTED'
       });
 
-      alert('ปฏิเสธคำขอย้ายเวรเรียบร้อยแล้ว');
+      alert('ปฏิเสธคำขอสลับเวรเรียบร้อยแล้ว');
       fetchPendingRequests();
       onUpdate(); // Refresh main roster grid
     } catch (err) {
@@ -141,7 +188,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
     <div className="bg-white shadow-sm rounded-xl border border-gray-200 p-6">
       <div className="flex items-center mb-6">
         <Users className="w-5 h-5 text-indigo-600 mr-3" />
-        <h2 className="text-xl font-bold text-gray-900">คำขอย้ายเวรที่รอดำเนินการ</h2>
+        <h2 className="text-xl font-bold text-gray-900">คำขอสลับเวรที่รอดำเนินการ</h2>
       </div>
 
       {loading && (
@@ -158,7 +205,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
       {!loading && pendingRequests.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          ไม่พบคำขอย้ายเวรที่รอดำเนินการ
+          ไม่พบคำขอสลับเวรที่รอดำเนินการ
         </div>
       )}
 
@@ -182,7 +229,7 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Requester's Shift */}
                 <div className="border border-gray-300 rounded-lg p-3 bg-white">
-                  <h3 className="text-md font-semibold text-gray-800 mb-2">ผู้ขอย้ายเวร</h3>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">ผู้ขอสลับเวร</h3>
                   <p className="text-sm text-gray-700 mb-1">ชื่อ: {getStaffName(request.requester_staff_id)}</p>
                   <p className="text-sm text-gray-700 mb-1">วันที่: {formatDateSafe(request.requester_date)}</p>
                   <p className="text-sm text-gray-700">กะ: 
@@ -194,10 +241,10 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
 
                 {/* Target's Shift */}
                 <div className="border border-gray-300 rounded-lg p-3 bg-white">
-                  <h3 className="text-md font-semibold text-gray-800 mb-2">ต้องการย้ายไปให้</h3>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">ต้องการสลับกับ</h3>
                   <p className="text-sm text-gray-700 mb-1">ชื่อ: {getStaffName(request.target_staff_id)}</p>
                   <p className="text-sm text-gray-700 mb-1">วันที่: {formatDateSafe(request.target_date)}</p>
-                  <p className="text-sm text-gray-700">กะเดิม: 
+                  <p className="text-sm text-gray-700">กะ: 
                     <span className={clsx("px-2 py-0.5 rounded-md text-xs font-medium ml-1", getShiftColor(request.target_shift_type))}>
                       {getShiftLabel(request.target_shift_type)} ({request.target_shift_type})
                     </span>
