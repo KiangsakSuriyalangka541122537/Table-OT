@@ -46,14 +46,6 @@ export function mergeShifts(currentTypes: string[], newType: string): string[] {
 }
 
 /**
- * Removes a shift type from an existing list of shift types.
- * Returns the new list of shift types.
- */
-export function removeFromShift(currentTypes: string[], typeToRemove: string): string[] {
-  return currentTypes.filter(t => t !== typeToRemove);
-}
-
-/**
  * Formats a list of shift types for display (e.g., "ช/บ/OT").
  */
 export function formatShiftDisplay(types: string[]): string {
