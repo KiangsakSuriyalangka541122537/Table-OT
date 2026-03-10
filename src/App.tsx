@@ -17,7 +17,6 @@ import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
-import { mergeShifts, formatShiftDisplay, SHIFT_ORDER } from './utils/shiftUtils';
 
 export default function App() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -195,64 +194,54 @@ export default function App() {
         if (sourceShift && targetShift) {
           // Check if merge is possible
           const targetTypes = targetShift.shift_type ? targetShift.shift_type.split(',') : [];
-          const typeToMove = selectedShiftForMove.shiftType;
+          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
           
-          if (!typeToMove) throw new Error("No shift type selected");
-
-          // Calculate merged result
-          const mergedTypes = mergeShifts(targetTypes, typeToMove);
+          // Combine unique types
+          let mergedTypes = [...targetTypes, ...sourceTypes];
+          mergedTypes = Array.from(new Set(mergedTypes));
+          
           const canMerge = mergedTypes.length <= 3;
           
           let action = '';
           
           if (canMerge) {
-             // If merge is possible, only ask to merge. No swap option.
-             if (window.confirm(`ต้องการ "รวมเวร" เป็น ${formatShiftDisplay(mergedTypes)} หรือไม่?`)) {
+             // Auto-merge if moving 'M' into a cell that doesn't have 'M'
+             if (selectedShiftForMove.shiftType === 'M' && !targetTypes.includes('M')) {
                 action = 'merge';
+             } else {
+                // If merge is possible, prioritize merge
+                if (window.confirm(`ต้องการ "รวมเวร" ไว้ในช่องเดียวกันหรือไม่?\n(กด OK เพื่อรวมเวร, กด Cancel เพื่อเลือกสลับเวร)`)) {
+                   action = 'merge';
+                } else {
+                   if (window.confirm(`ต้องการ "สลับเวร" แทนหรือไม่?`)) {
+                      action = 'swap';
+                   }
+                }
              }
           } else {
-             // Cannot merge due to max 3 shifts constraint. No swap option.
-             alert(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (จะเป็น ${formatShiftDisplay(mergedTypes)})`);
+             // Cannot merge due to max 3 shifts constraint
+             if (window.confirm(`ไม่สามารถรวมเวรได้เนื่องจากเกิน 3 กะ (มี ${mergedTypes.join(', ')}) ต้องการ "สลับเวร" แทนหรือไม่?`)) {
+                action = 'swap';
+             }
           }
 
           if (action === 'merge') {
+            const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
+            mergedTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
             const newShiftTypeStr = mergedTypes.join(',');
 
             await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
-            
-            // Handle source shift: remove only the moved shift type
-            const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
-            const newSourceTypes = sourceTypes.filter(t => t !== typeToMove);
-            
-            if (newSourceTypes.length === 0) {
-              await supabase.from('shifts').delete().eq('id', sourceShift.id);
-            } else {
-              await supabase.from('shifts').update({ shift_type: newSourceTypes.join(',') }).eq('id', sourceShift.id);
-            }
-            
-          } 
-          // Swap block removed as requested
-        } else if (sourceShift && !targetShift) {
-          // Move to empty slot
-          const typeToMove = selectedShiftForMove.shiftType;
-          if (!typeToMove) throw new Error("No shift type selected");
-
-          // Handle source shift: remove only the moved shift type
-          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
-          const newSourceTypes = sourceTypes.filter(t => t !== typeToMove);
-          
-          if (newSourceTypes.length === 0) {
-            // If source cell becomes empty, we can just update the staff_id to move the whole record
+            await supabase.from('shifts').delete().eq('id', sourceShift.id);
+          } else if (action === 'swap') {
+            // Swap: Update source to temp date, target to source, source to target
+            const tempDate = '2000-01-01';
+            await supabase.from('shifts').update({ date: tempDate }).eq('id', sourceShift.id);
+            await supabase.from('shifts').update({ staff_id: selectedShiftForMove.staffId, date: selectedShiftForMove.dateStr }).eq('id', targetShift.id);
             await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
-          } else {
-            // If source cell still has other shifts, we update source and insert a new record for target
-            await supabase.from('shifts').update({ shift_type: newSourceTypes.join(',') }).eq('id', sourceShift.id);
-            await supabase.from('shifts').insert({
-              staff_id: staffId,
-              date: dateStr,
-              shift_type: typeToMove
-            });
           }
+        } else if (sourceShift && !targetShift) {
+          // Move
+          await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
         }
         
         await fetchData(); // Refresh shifts
@@ -554,18 +543,30 @@ export default function App() {
         
       if (deleteError) throw deleteError;
 
-      // 1.5 Delete all swap requests for the current month (checking both requester and target dates)
-      await supabase
-        .from('shift_swap_requests')
-        .delete()
-        .gte('requester_date', startDate)
-        .lte('requester_date', endDate);
-
-      await supabase
-        .from('shift_swap_requests')
-        .delete()
-        .gte('target_date', startDate)
-        .lte('target_date', endDate);
+      // 1.5 Delete all swap requests for the current month
+      const currentMonthStr = format(currentMonth, 'yyyy-MM');
+      const { data: allSwaps } = await supabase.from('shift_swap_requests').select('id, requester_date, target_date');
+      
+      if (allSwaps) {
+        const swapsToDelete = allSwaps.filter(s => 
+          (s.requester_date && s.requester_date.startsWith(currentMonthStr)) || 
+          (s.target_date && s.target_date.startsWith(currentMonthStr))
+        );
+        
+        if (swapsToDelete.length > 0) {
+          const idsToDelete = swapsToDelete.map(s => s.id);
+          
+          for (let i = 0; i < idsToDelete.length; i += 100) {
+            const chunk = idsToDelete.slice(i, i + 100);
+            const { error: deleteSwapsError } = await supabase
+              .from('shift_swap_requests')
+              .delete()
+              .in('id', chunk);
+              
+            if (deleteSwapsError) throw deleteSwapsError;
+          }
+        }
+      }
 
       // Clear local states immediately for better UX
       setShifts([]);
