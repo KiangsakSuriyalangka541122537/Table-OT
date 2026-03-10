@@ -20,6 +20,7 @@ interface GridProps {
   pendingSwaps?: ShiftSwapRequest[];
   approvedSwaps?: ShiftSwapRequest[];
   originalAssignments?: Shift[];
+  displayMode?: 'mode1' | 'mode2';
 }
 
 const shiftColors: Record<ShiftType, string> = {
@@ -50,7 +51,8 @@ export function Grid({
   targetShiftToSwap,
   pendingSwaps = [],
   approvedSwaps = [],
-  originalAssignments = []
+  originalAssignments = [],
+  displayMode = 'mode1'
 }: GridProps) {
   const [hoveredSwapIds, setHoveredSwapIds] = React.useState<string[]>([]);
   const daysInMonth = getDaysInMonth(currentMonth);
@@ -70,6 +72,50 @@ export function Grid({
     const shift = originalAssignments.find(s => s.staff_id === staffId && s.date === dateStr);
     if (!shift || !shift.shift_type) return [];
     return shift.shift_type.split(',') as ShiftType[];
+  };
+
+  const getDisplayShifts = (staffId: string, dateStr: string, sourceShifts: Shift[]): ShiftType[] => {
+    const getShifts = (dStr: string) => {
+      const shift = sourceShifts.find(s => s.staff_id === staffId && s.date === dStr);
+      if (!shift || !shift.shift_type) return [];
+      return shift.shift_type.split(',') as ShiftType[];
+    };
+
+    const currentShifts = getShifts(dateStr);
+    
+    if (displayMode === 'mode1') {
+      return currentShifts;
+    }
+
+    const date = new Date(dateStr);
+    const prevDateStr = format(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1), 'yyyy-MM-dd');
+    const prevPrevDateStr = format(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 2), 'yyyy-MM-dd');
+    const nextDateStr = format(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1), 'yyyy-MM-dd');
+
+    const prevShifts = getShifts(prevDateStr);
+    const prevPrevShifts = getShifts(prevPrevDateStr);
+    const nextShifts = getShifts(nextDateStr);
+
+    let displayShifts: ShiftType[] = [...currentShifts];
+
+    if (displayShifts.includes('N') && prevShifts.includes('A')) {
+      displayShifts = displayShifts.filter(s => s !== 'N');
+    }
+    if (displayShifts.includes('M') && prevShifts.includes('N') && !prevPrevShifts.includes('A')) {
+      displayShifts = displayShifts.filter(s => s !== 'M');
+    }
+
+    if (currentShifts.includes('A') && nextShifts.includes('N')) {
+      if (!displayShifts.includes('N')) displayShifts.push('N');
+    }
+    if (currentShifts.includes('N') && !prevShifts.includes('A') && nextShifts.includes('M')) {
+      if (!displayShifts.includes('M')) displayShifts.push('M');
+    }
+
+    const order: Record<ShiftType, number> = { 'M': 1, 'A': 2, 'N': 3, 'O': 4 };
+    displayShifts.sort((a, b) => order[a] - order[b]);
+
+    return displayShifts;
   };
 
   return (
@@ -148,7 +194,7 @@ export function Grid({
                 </td>
                 {days.map((day) => {
                   const dateStr = format(day, 'yyyy-MM-dd');
-                  const currentShifts = getShiftsForStaffAndDate(staff.id, dateStr);
+                  const currentShifts = getDisplayShifts(staff.id, dateStr, shifts);
                   const isTdy = isToday(day);
                   const isWknd = isWeekend(day);
                   const isSelectedForMove = selectedShiftForMove?.staffId === staff.id && selectedShiftForMove?.dateStr === dateStr;
@@ -176,7 +222,7 @@ export function Grid({
                     )
                   );
 
-                  const originalShifts = getOriginalShiftsForStaffAndDate(staff.id, dateStr);
+                  const originalShifts = getDisplayShifts(staff.id, dateStr, originalAssignments);
 
                   return (
                     <td
@@ -198,7 +244,8 @@ export function Grid({
                         
                         // If admin and NOT published, allow direct editing
                         if (isAdmin && !isPublished) {
-                          onCellClick(staff.id, dateStr, currentShifts);
+                          const actualShifts = getShiftsForStaffAndDate(staff.id, dateStr);
+                          onCellClick(staff.id, dateStr, actualShifts);
                         } 
                         // If logged in (admin or user) and published (or not admin), allow swap request
                         else if (user && staffObj) {
