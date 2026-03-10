@@ -220,15 +220,39 @@ export default function App() {
 
             await supabase.from('shifts').update({ shift_type: newShiftTypeStr }).eq('id', targetShift.id);
             
-            // Since selectedShiftForMove is only allowed for single-shift cells (enforced by selection logic),
-            // we can safely delete the source shift.
-            await supabase.from('shifts').delete().eq('id', sourceShift.id);
+            // Handle source shift: remove only the moved shift type
+            const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
+            const newSourceTypes = sourceTypes.filter(t => t !== typeToMove);
+            
+            if (newSourceTypes.length === 0) {
+              await supabase.from('shifts').delete().eq('id', sourceShift.id);
+            } else {
+              await supabase.from('shifts').update({ shift_type: newSourceTypes.join(',') }).eq('id', sourceShift.id);
+            }
             
           } 
           // Swap block removed as requested
         } else if (sourceShift && !targetShift) {
           // Move to empty slot
-          await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
+          const typeToMove = selectedShiftForMove.shiftType;
+          if (!typeToMove) throw new Error("No shift type selected");
+
+          // Handle source shift: remove only the moved shift type
+          const sourceTypes = sourceShift.shift_type ? sourceShift.shift_type.split(',') : [];
+          const newSourceTypes = sourceTypes.filter(t => t !== typeToMove);
+          
+          if (newSourceTypes.length === 0) {
+            // If source cell becomes empty, we can just update the staff_id to move the whole record
+            await supabase.from('shifts').update({ staff_id: staffId, date: dateStr }).eq('id', sourceShift.id);
+          } else {
+            // If source cell still has other shifts, we update source and insert a new record for target
+            await supabase.from('shifts').update({ shift_type: newSourceTypes.join(',') }).eq('id', sourceShift.id);
+            await supabase.from('shifts').insert({
+              staff_id: staffId,
+              date: dateStr,
+              shift_type: typeToMove
+            });
+          }
         }
         
         await fetchData(); // Refresh shifts
