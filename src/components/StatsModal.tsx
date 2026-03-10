@@ -18,9 +18,18 @@ export function StatsModal({ isOpen, onClose, staffList, shifts }: StatsModalPro
   const stats = useMemo(() => {
     return staffList.map(staff => {
       const staffShifts = shifts.filter(s => s.staff_id === staff.id);
-      const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
-      const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
-      const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
+      let mCount = 0;
+      let aCount = 0;
+      let nCount = 0;
+      
+      staffShifts.forEach(s => {
+        if (s.shift_type) {
+          const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+          if (types.includes('M')) mCount++;
+          if (types.includes('A')) aCount++;
+          if (types.includes('N')) nCount++;
+        }
+      });
       
       // Calculate total shifts: M is 1 shift, A+N pair is 1 shift
       // We use (A+N)/2 to handle month boundaries correctly

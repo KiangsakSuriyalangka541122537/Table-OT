@@ -64,27 +64,28 @@ export function Grid({
   const getShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
     const shift = shifts.find(s => s.staff_id === staffId && s.date === dateStr);
     if (!shift || !shift.shift_type) return [];
-    return shift.shift_type.split(',') as ShiftType[];
+    return shift.shift_type.split(',').map(s => s.trim()).filter(Boolean) as ShiftType[];
   };
 
   const getOriginalShiftsForStaffAndDate = (staffId: string, dateStr: string): ShiftType[] => {
     if (!isPublished || !originalAssignments || originalAssignments.length === 0) return [];
     const shift = originalAssignments.find(s => s.staff_id === staffId && s.date === dateStr);
     if (!shift || !shift.shift_type) return [];
-    return shift.shift_type.split(',') as ShiftType[];
+    return shift.shift_type.split(',').map(s => s.trim()).filter(Boolean) as ShiftType[];
   };
 
   const getDisplayShifts = (staffId: string, dateStr: string, sourceShifts: Shift[]): ShiftType[] => {
     const getShifts = (dStr: string) => {
       const shift = sourceShifts.find(s => s.staff_id === staffId && s.date === dStr);
       if (!shift || !shift.shift_type) return [];
-      return shift.shift_type.split(',') as ShiftType[];
+      return shift.shift_type.split(',').map(s => s.trim()).filter(Boolean) as ShiftType[];
     };
 
     const currentShifts = getShifts(dateStr);
     
     if (displayMode === 'mode1') {
-      return currentShifts;
+      const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3, 'O': 4 };
+      return [...currentShifts].sort((a, b) => (order[a] || 99) - (order[b] || 99));
     }
 
     const date = new Date(dateStr);
@@ -166,7 +167,7 @@ export function Grid({
             
             staffShifts.forEach(s => {
               if (s.shift_type) {
-                const types = s.shift_type.split(',');
+                const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
                 if (types.includes('M')) mCount++;
                 if (types.includes('A')) aCount++;
                 if (types.includes('N')) nCount++;
@@ -331,7 +332,7 @@ export function Grid({
                     let m = 0, a = 0, n = 0;
                     staffShifts.forEach(s => {
                       if (s.shift_type) {
-                        const types = s.shift_type.split(',');
+                        const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
                         if (types.includes('M')) m++;
                         if (types.includes('A')) a++;
                         if (types.includes('N')) n++;
@@ -348,7 +349,7 @@ export function Grid({
                     let m = 0, a = 0, n = 0;
                     staffShifts.forEach(s => {
                       if (s.shift_type) {
-                        const types = s.shift_type.split(',');
+                        const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
                         if (types.includes('M')) m++;
                         if (types.includes('A')) a++;
                         if (types.includes('N')) n++;

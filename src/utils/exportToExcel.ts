@@ -153,9 +153,19 @@ export const exportToExcel = async (currentMonth: Date, staffList: Staff[], shif
       const row = sheet.getRow(currentRowIdx);
       const staffShifts = shifts.filter(s => s.staff_id === staff.id);
       
-      const mCount = staffShifts.filter(s => s.shift_type === 'M').length;
-      const aCount = staffShifts.filter(s => s.shift_type === 'A').length;
-      const nCount = staffShifts.filter(s => s.shift_type === 'N').length;
+      let mCount = 0;
+      let aCount = 0;
+      let nCount = 0;
+      
+      staffShifts.forEach(s => {
+        if (s.shift_type) {
+          const types = s.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+          if (types.includes('M')) mCount++;
+          if (types.includes('A')) aCount++;
+          if (types.includes('N')) nCount++;
+        }
+      });
+      
       const totalShifts = mCount + ((aCount + nCount) / 2);
       const totalPay = totalShifts * 750;
 
@@ -184,10 +194,15 @@ export const exportToExcel = async (currentMonth: Date, staffList: Staff[], shif
         } else {
           const dateStr = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day), 'yyyy-MM-dd');
           const shift = staffShifts.find(s => s.date === dateStr);
-          if (shift) {
-            if (shift.shift_type === 'M') cell.value = 'ช';
-            else if (shift.shift_type === 'A') cell.value = 'บ';
-            else if (shift.shift_type === 'N') cell.value = 'ด';
+          if (shift && shift.shift_type) {
+            const types = shift.shift_type.split(',').map(t => t.trim()).filter(Boolean);
+            const labels = types.map(t => {
+              if (t === 'M') return 'ช';
+              if (t === 'A') return 'บ';
+              if (t === 'N') return 'ด';
+              return '';
+            }).filter(Boolean);
+            cell.value = labels.join('/');
           }
         }
       });
