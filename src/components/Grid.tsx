@@ -2,7 +2,7 @@ import React from 'react';
 import { format, getDaysInMonth, isWeekend, isToday } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { User as UserIcon } from 'lucide-react';
-import { Staff, Shift, ShiftType, User } from '../types';
+import { Staff, Shift, ShiftType, User, ShiftSwapRequest } from '../types';
 import clsx from 'clsx';
 
 interface GridProps {

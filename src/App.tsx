@@ -511,7 +511,15 @@ export default function App() {
         original_assignments: newStatus ? shifts : rosterStatus?.original_assignments
       });
       
-      setRosterStatus(prev => prev ? { ...prev, is_published: newStatus } : null);
+      setRosterStatus(prev => prev ? { 
+        ...prev, 
+        is_published: newStatus,
+        original_assignments: newStatus ? shifts : prev.original_assignments
+      } : {
+        month_key: monthKey,
+        is_published: newStatus,
+        original_assignments: newStatus ? shifts : null
+      });
       
       await supabase.from('logs').insert({
         message: `Admin ${newStatus ? 'published' : 'unpublished'} roster for ${monthKey}`,
@@ -599,6 +607,13 @@ export default function App() {
     }
   };
 
+  const getExportShifts = () => {
+    if (rosterStatus?.is_published && rosterStatus?.original_assignments) {
+      return rosterStatus.original_assignments as Shift[];
+    }
+    return shifts;
+  };
+
   const handleExportPDF = async () => {
     if (!pdfRef.current) {
       alert('ไม่พบข้อมูลสำหรับสร้าง PDF');
@@ -643,7 +658,7 @@ export default function App() {
 
   const handleExportExcel = async () => {
     try {
-      await exportToExcel(currentMonth, staffList, shifts);
+      await exportToExcel(currentMonth, staffList, getExportShifts());
     } catch (error) {
       console.error('Error exporting Excel:', error);
       alert('เกิดข้อผิดพลาดในการส่งออก Excel');
@@ -859,7 +874,7 @@ export default function App() {
           ref={pdfRef}
           currentMonth={currentMonth}
           staffList={staffList}
-          shifts={shifts}
+          shifts={getExportShifts()}
         />
       </div>
     </div>
