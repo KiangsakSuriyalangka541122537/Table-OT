@@ -39,6 +39,7 @@ export function ShiftSwapRequestModal({
   const [requesterShiftId, setRequesterShiftId] = useState<string>('');
   const [targetStaffId, setTargetStaffId] = useState<string>('');
   const [targetShiftId, setTargetShiftId] = useState<string>('');
+  const [isMerge, setIsMerge] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -47,6 +48,7 @@ export function ShiftSwapRequestModal({
       setRequesterShiftId(initialRequesterShift?.id || '');
       setTargetStaffId(initialTargetShift?.staff_id || '');
       setTargetShiftId(initialTargetShift?.id || '');
+      setIsMerge(false);
       setError(null);
       setLoading(false);
     }
@@ -87,7 +89,7 @@ export function ShiftSwapRequestModal({
         requester_date: requesterShift.date,
         requester_shift_type: requesterShift.shift_type,
         target_staff_id: targetStaffId,
-        target_shift_id: targetShiftId.startsWith('empty-') ? null : targetShiftId,
+        target_shift_id: (isMerge || targetShiftId.startsWith('empty-')) ? null : targetShiftId,
         target_date: targetDate,
         target_shift_type: targetShift?.shift_type || 'O', // Default to 'O' for empty slots
       });
@@ -142,6 +144,8 @@ export function ShiftSwapRequestModal({
 
   const selectedTargetStaff = allStaff.find(s => s.id === targetStaffId);
 
+  const isSameDay = selectedRequesterShift && selectedTargetShift && selectedRequesterShift.date === selectedTargetShift.date;
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
       <div className="relative bg-white rounded-xl shadow-xl p-8 w-full max-w-md mx-4">
@@ -166,44 +170,97 @@ export function ShiftSwapRequestModal({
         <div className="space-y-4 mb-6">
           {/* Summary (Always show if both are selected) */}
           {selectedRequesterShift && selectedTargetShift && selectedTargetStaff && (
-            <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100 shadow-sm space-y-4">
-              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">
-                <span>ยืนยันการสลับเวร</span>
-              </div>
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex-1 text-center">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
-                    <span className="text-emerald-600 font-bold text-xs">{selectedRequesterShift.shift_type}</span>
+            <div className="space-y-4">
+              {isSameDay && (
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <button
+                    onClick={() => setIsMerge(false)}
+                    className={clsx(
+                      "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
+                      !isMerge ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    สลับเวร (Swap)
+                  </button>
+                  <button
+                    onClick={() => setIsMerge(true)}
+                    className={clsx(
+                      "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
+                      isMerge ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    รวมเวร (Merge)
+                  </button>
+                </div>
+              )}
+
+              <div className={clsx(
+                "rounded-xl p-5 border shadow-sm space-y-4 transition-colors",
+                isMerge ? "bg-emerald-50 border-emerald-100" : "bg-indigo-50 border-indigo-100"
+              )}>
+                <div className={clsx(
+                  "flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em]",
+                  isMerge ? "text-emerald-600" : "text-indigo-600"
+                )}>
+                  <span>{isMerge ? 'ยืนยันการรวมเวร' : 'ยืนยันการสลับเวร'}</span>
+                </div>
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex-1 text-center">
+                    <div className={clsx(
+                      "w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border",
+                      isMerge ? "border-emerald-100" : "border-indigo-100"
+                    )}>
+                      <span className={clsx("font-bold text-xs", isMerge ? "text-emerald-600" : "text-indigo-600")}>
+                        {selectedRequesterShift.shift_type}
+                      </span>
+                    </div>
+                    <p className={clsx("text-[10px] uppercase font-bold mb-0.5", isMerge ? "text-emerald-700/60" : "text-indigo-700/60")}>กะของคุณ</p>
+                    <p className={clsx("font-bold text-sm", isMerge ? "text-emerald-900" : "text-indigo-900")}>{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
                   </div>
-                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของคุณ</p>
-                  <p className="font-bold text-emerald-900 text-sm">{format(new Date(selectedRequesterShift.date), 'dd/MM')}</p>
-                  {requesterPairedShift && (
-                    <p className="text-[10px] text-emerald-600 mt-1">
-                      + {requesterPairedShift.shift_type} ({format(new Date(requesterPairedShift.date), 'dd/MM')})
+                  <div className="flex-shrink-0">
+                    <div className={clsx(
+                      "w-8 h-8 rounded-full flex items-center justify-center shadow-lg",
+                      isMerge ? "bg-emerald-600 shadow-emerald-200" : "bg-indigo-600 shadow-indigo-200"
+                    )}>
+                      {isMerge ? (
+                        <CheckCircle className="w-4 h-4 text-white" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4 text-white animate-spin-slow" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <div className={clsx(
+                      "w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border",
+                      isMerge ? "border-emerald-100" : "border-indigo-100"
+                    )}>
+                      <span className={clsx("font-bold text-xs", isMerge ? "text-emerald-600" : "text-indigo-600")}>
+                        {selectedTargetShift.id.startsWith('empty-') ? '-' : selectedTargetShift.shift_type}
+                      </span>
+                    </div>
+                    <p className={clsx("text-[10px] uppercase font-bold mb-0.5", isMerge ? "text-emerald-700/60" : "text-indigo-700/60")}>
+                      {isMerge ? 'ไปรวมที่' : `กะของ ${selectedTargetStaff.name ? selectedTargetStaff.name.split(' ')[0] : 'เพื่อน'}`}
                     </p>
-                  )}
-                </div>
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-200">
-                    <RefreshCw className="w-4 h-4 text-white animate-spin-slow" />
-                  </div>
-                </div>
-                <div className="flex-1 text-center">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
-                    <span className="text-emerald-600 font-bold text-xs">
-                      {selectedTargetShift.id.startsWith('empty-') ? '-' : selectedTargetShift.shift_type}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-emerald-700/60 uppercase font-bold mb-0.5">กะของ {selectedTargetStaff.name ? selectedTargetStaff.name.split(' ')[0] : 'เพื่อน'}</p>
-                  <p className="font-bold text-emerald-900 text-sm">
-                    {selectedTargetShift.id.startsWith('empty-') ? 'ช่องว่าง' : format(new Date(selectedTargetShift.date), 'dd/MM')}
-                  </p>
-                  {targetPairedShift && (
-                    <p className="text-[10px] text-emerald-600 mt-1">
-                      + {targetPairedShift.shift_type} ({format(new Date(targetPairedShift.date), 'dd/MM')})
+                    <p className={clsx("font-bold text-sm", isMerge ? "text-emerald-900" : "text-indigo-900")}>
+                      {isMerge ? selectedTargetStaff.name.split(' ')[0] : (selectedTargetShift.id.startsWith('empty-') ? 'ช่องว่าง' : format(new Date(selectedTargetShift.date), 'dd/MM'))}
                     </p>
-                  )}
+                  </div>
                 </div>
+                
+                {isMerge && (
+                  <div className="bg-white/50 rounded-lg p-2 text-center">
+                    <p className="text-[10px] text-emerald-800 font-medium">
+                      ผลลัพธ์: {selectedTargetStaff.name.split(' ')[0]} จะได้เวร <span className="font-bold">
+                        {(() => {
+                          const types = [...(selectedTargetShift.shift_type === 'O' ? [] : selectedTargetShift.shift_type.split(',')), selectedRequesterShift.shift_type];
+                          const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
+                          types.sort((a, b) => (order[a] || 99) - (order[b] || 99));
+                          return types.join('/');
+                        })()}
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

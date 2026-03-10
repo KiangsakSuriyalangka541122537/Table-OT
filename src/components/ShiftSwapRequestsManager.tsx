@@ -102,14 +102,45 @@ export function ShiftSwapRequestsManager({ allStaff, allShifts, onUpdate }: Shif
         if (error1) throw new Error(`Failed to update requester shift: ${error1.message}`);
 
       } else if (currentRequesterShiftId && !currentTargetShiftId) {
-        // Case B: Moving Requester's Shift to an Empty Slot
+        // Case B: Moving Requester's Shift to a Slot (Target)
         
-        const { error: error3 } = await supabase.from('shifts').update({
-          staff_id: request.target_staff_id,
-          date: request.target_date
-        }).eq('id', currentRequesterShiftId);
+        // Check if target staff already has a shift on that date (Merge case)
+        const { data: existingTargetShifts } = await supabase
+          .from('shifts')
+          .select('*')
+          .eq('staff_id', request.target_staff_id)
+          .eq('date', request.target_date);
+        
+        const existingTargetShift = existingTargetShifts?.[0];
 
-        if (error3) throw new Error(`Failed to move shift: ${error3.message}`);
+        if (existingTargetShift) {
+          // MERGE LOGIC
+          const requesterTypes = request.requester_shift_type.split(',').map(t => t.trim());
+          const targetTypes = existingTargetShift.shift_type.split(',').map(t => t.trim());
+          
+          // Combine and unique
+          let mergedTypes = Array.from(new Set([...targetTypes, ...requesterTypes]));
+          
+          // Sort
+          const order: Record<string, number> = { 'M': 1, 'A': 2, 'N': 3 };
+          mergedTypes.sort((a, b) => (order[a] || 99) - (order[b] || 99));
+          
+          // Update target
+          await supabase.from('shifts').update({ 
+            shift_type: mergedTypes.join(',') 
+          }).eq('id', existingTargetShift.id);
+          
+          // Delete requester shift
+          await supabase.from('shifts').delete().eq('id', currentRequesterShiftId);
+        } else {
+          // SIMPLE MOVE
+          const { error: error3 } = await supabase.from('shifts').update({
+            staff_id: request.target_staff_id,
+            date: request.target_date
+          }).eq('id', currentRequesterShiftId);
+
+          if (error3) throw new Error(`Failed to move shift: ${error3.message}`);
+        }
       } else {
         console.warn('Could not find requester shift for swap approval.', {
           staff_id: request.requester_staff_id,
